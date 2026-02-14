@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>AI小手机·全能增强版</title>
+<title>AI小手机·终极增强版</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 body{max-width:420px;margin:0 auto;height:100vh;overflow:hidden;border:1px solid #ddd}
@@ -17,9 +17,15 @@ body{max-width:420px;margin:0 auto;height:100vh;overflow:hidden;border:1px solid
 }
 body{background:var(--bg);color:var(--text)}
 
-/* 锁屏 */
-#lock{background:linear-gradient(135deg,var(--main),#999);color:#fff;text-align:center;padding-top:65%}
+/* 锁屏 + 壁纸 */
+#lock{
+  background:linear-gradient(135deg,var(--main),#999);
+  background-size:cover;
+  background-position:center;
+  color:#fff;text-align:center;padding-top:65%
+}
 #unlock{margin-top:40px;padding:14px 36px;border-radius:30px;border:none;background:#fff;color:var(--main);font-size:16px}
+#set_wallpaper{margin-top:20px;padding:8px 20px;border-radius:20px;border:none;background:#fff;color:var(--main);font-size:14px}
 
 /* 桌面 */
 #home{padding:20px}
@@ -42,6 +48,10 @@ body{background:var(--bg);color:var(--text)}
 .msg img{max-width:100%;border-radius:12px;margin:8px 0}
 .msg code{background:#f1f1f1;padding:2px 6px;border-radius:4px;font-family:monospace}
 .msg pre{background:#f1f1f1;padding:12px;border-radius:8px;overflow-x:auto}
+.msg strong{font-weight:600}
+.msg em{font-style:italic}
+.msg ul{margin-left:20px}
+.msg li{margin:4px 0}
 .input-bar{display:flex;gap:8px;padding:12px;background:var(--card)}
 #input{flex:1;border:none;border-radius:24px;padding:12px 16px;background:#f1f1f1;outline:none}
 #send{width:48px;height:48px;border-radius:50%;background:var(--main);color:#fff;border:none}
@@ -53,6 +63,7 @@ body{background:var(--bg);color:var(--text)}
 #emoji.active{display:grid}
 .emoji{font-size:20px;padding:6px;text-align:center}
 .custom-emoji{width:32px;height:32px;object-fit:cover;border-radius:8px}
+#add_emoji{position:absolute;bottom:10px;right:10px;width:32px;height:32px;border-radius:50%;background:var(--main);color:#fff;border:none;font-size:16px}
 
 /* 弹窗 */
 .pop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;place-items:center}
@@ -71,11 +82,10 @@ body{background:var(--bg);color:var(--text)}
 .card{background:var(--card);padding:16px;border-radius:12px;margin-bottom:10px;box-shadow:var(--shadow)}
 .add-btn{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--main);color:#fff;border:none;font-size:24px}
 
-/* 高级渲染 */
-.markdown strong{font-weight:600}
-.markdown em{font-style:italic}
-.markdown ul{margin-left:20px}
-.markdown li{margin:4px 0}
+/* API平台选择 */
+.platform-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);border-bottom:1px solid #eee}
+.platform-item img{width:24px;height:24px}
+.platform-item.active{background:var(--main);color:#fff}
 </style>
 </head>
 <body>
@@ -84,6 +94,7 @@ body{background:var(--bg);color:var(--text)}
 <div id="lock" class="screen active">
   <h2>AI小手机</h2><p>专属智能终端</p >
   <button id="unlock" onclick="unlock()">点我解锁</button>
+  <button id="set_wallpaper" onclick="setLockWallpaper()">设置壁纸</button>
 </div>
 
 <!-- 桌面 -->
@@ -91,10 +102,4 @@ body{background:var(--bg);color:var(--text)}
   <div class="home-title"><h2>桌面</h2><span id="time"></span></div>
   <div class="app-grid">
     <div class="app" onclick="go('chat')"><div class="app-icon">💬</div><div class="app-name">聊天</div></div>
-    <div class="app" onclick="go('api')"><div class="app-icon">🔌</div><div class="app-name">API</div></div>
-    <div class="app" onclick="go('world')"><div class="app-icon">📚</div><div class="app-name">世界书</div></div>
-    <div class="app" onclick="go('preset')"><div class="app-icon">🎭</div><div class="app-name">预设</div></div>
-    <div class="app" onclick="go('theme')"><div class="app-icon">🎨</div><div class="app-name">主题</div></div>
-    <div class="app" onclick="go('memory')"><div class="app-icon">🧠</div><div class="app-name">记忆</div></div>
-    <div class="app" onclick="go('tools')"><div class="app-icon">⚙️</div><div class="app-name">脚本</div></div>
-    <div class="app" onclick="go('import')"><div class
+    <div class="app" onclick="go('api')"><div class="app-icon">🔌</div><div class="app-n
