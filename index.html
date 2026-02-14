@@ -3,625 +3,650 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>AI小手机·终极增强版</title>
+<title>AI小手机·完整版</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-body{max-width:420px;margin:0 auto;height:100vh;overflow:hidden;border:1px solid #ddd}
+body{max-width:420px;margin:0 auto;height:100vh;overflow:hidden;background:#f5f5f5;color:#222}
 .screen{display:none;height:100%;overflow-y:auto}
 .active{display:block}
-
-/* 主题系统 */
-:root{
-  --main:#ff69b4;--bg:#fff;--card:#fafafa;--text:#222;--gray:#888;
-  --shadow:0 2px 8px rgba(0,0,0,.05);--radius:18px;
+/* 解锁页 */
+#unlock-screen{
+  position:relative;
+  background:linear-gradient(135deg,#ff69b4,#ff8c69);
+  color:#fff;text-align:center;padding-top:40%;
+  transition:background 0.3s;
 }
-body{background:var(--bg);color:var(--text)}
-
-/* 锁屏 + 壁纸 */
-#lock{
-  background:linear-gradient(135deg,var(--main),#999);
-  background-size:cover;
-  background-position:center;
-  color:#fff;text-align:center;padding-top:65%
+#unlock-screen.wallpaper-set{
+  background:transparent !important;
 }
-#unlock{margin-top:40px;padding:14px 36px;border-radius:30px;border:none;background:#fff;color:var(--main);font-size:16px}
-#set_wallpaper{margin-top:20px;padding:8px 20px;border-radius:20px;border:none;background:#fff;color:var(--main);font-size:14px}
-
+#unlock-bg{
+  position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-1;
+}
+#unlock-screen h1{font-size:48px;margin-bottom:20px}
+#unlock-screen p{font-size:20px;opacity:0.8;margin-bottom:40px}
+#unlock-btn{
+  padding:16px 40px;border:none;border-radius:30px;background:#fff;color:#ff69b4;font-size:20px
+}
 /* 桌面 */
-#home{padding:20px}
-.home-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+#home{position:relative;height:100%}
+#home-page1, #home-page2{
+  position:relative;height:100%;padding:20px;display:none;
+}
+#home-page1.active, #home-page2.active{display:block}
+#home-page1.wallpaper-set, #home-page2.wallpaper-set{
+  background:transparent !important;
+}
+.page-bg{
+  position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-1;
+}
+#page-indicators{display:flex;justify-content:center;gap:8px;padding:10px}
+.page-indicator{width:8px;height:8px;border-radius:50%;background:#ddd}
+.page-indicator.active{background:#ff69b4}
+#dock{
+  display:flex;justify-content:space-around;align-items:center;
+  padding:12px;background:#fff;border-radius:20px;
+  margin:0 20px 20px;box-shadow:0 4px 12px rgba(0,0,0,0.1)
+}
+.dock-item{text-align:center}
+.dock-icon{width:40px;height:40px;background:#ff69b4;border-radius:12px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;color:#fff}
+.dock-name{font-size:12px}
 .app-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.app{background:var(--card);border-radius:var(--radius);padding:12px 8px;text-align:center;box-shadow:var(--shadow)}
-.app-icon{width:44px;height:44px;background:var(--main);color:#fff;border-radius:14px;margin:0 auto 6px;display:grid;place-items:center;font-size:20px}
+.app{background:#fff;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.app-icon{width:40px;height:40px;margin:0 auto 8px;background:#ff69b4;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
 .app-name{font-size:12px}
-
-/* 标题栏 */
-.head{display:flex;align-items:center;gap:12px;padding:16px;background:var(--card);border-bottom:1px solid #eee}
-.head button{border:none;background:transparent;font-size:20px;color:var(--text)}
-.head h3{flex:1}
-
-/* 聊天 */
-#msgs{height:68vh;padding:16px;overflow-y:auto}
-.msg{max-width:75%;padding:10px 14px;border-radius:var(--radius);margin:6px 0;line-height:1.4}
-.user{background:var(--main);color:#fff;margin-left:auto}
-.ai{background:var(--card);margin-right:auto}
-.msg img{max-width:100%;border-radius:12px;margin:8px 0}
-.msg code{background:#f1f1f1;padding:2px 6px;border-radius:4px;font-family:monospace}
-.msg pre{background:#f1f1f1;padding:12px;border-radius:8px;overflow-x:auto}
-.msg strong{font-weight:600}
-.msg em{font-style:italic}
-.msg ul{margin-left:20px}
-.msg li{margin:4px 0}
-.input-bar{display:flex;gap:8px;padding:12px;background:var(--card)}
-#input{flex:1;border:none;border-radius:24px;padding:12px 16px;background:#f1f1f1;outline:none}
-#send{width:48px;height:48px;border-radius:50%;background:var(--main);color:#fff;border:none}
-.toolbar{display:flex;gap:10px;padding:8px 16px;background:var(--card)}
-.tool{width:40px;height:40px;border-radius:12px;background:var(--bg);border:none}
-
+.widget{background:#fff;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.widget-title{font-weight:600;margin-bottom:8px}
+.widget-content{font-size:14px;color:#666}
+.wechat-fab{
+  position:fixed;bottom:120px;right:30px;
+  width:56px;height:56px;border-radius:50%;
+  background:#ff69b4;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;box-shadow:0 4px 12px rgba(255,105,180,0.4)
+}
+/* 通用头部 */
+.head{
+  padding:16px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center
+}
+.head button{border:none;background:transparent;font-size:20px}
+.head h3{margin-left:16px}
+/* 壁纸模块 */
+#wallpaper{padding:16px}
+.wallpaper-section{
+  background:#fff;border-radius:16px;padding:16px;margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1)
+}
+.section-header{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:16px
+}
+.section-title{font-size:18px;font-weight:600}
+.section-switch{
+  padding:6px 12px;background:#f1f1f1;border-radius:12px;font-size:14px
+}
+.wallpaper-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px
+}
+.wallpaper-item{
+  position:relative;border-radius:12px;overflow:hidden;aspect-ratio:9/16;
+  background:#f1f1f1;cursor:pointer
+}
+.wallpaper-item img,.wallpaper-item video{
+  width:100%;height:100%;object-fit:cover
+}
+.wallpaper-item .upload-btn{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:40px;height:40px;border-radius:50%;background:#ff69b4;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:20px
+}
+.wallpaper-item .apply-btn{
+  position:absolute;bottom:8px;right:8px;width:24px;height:24px;border-radius:50%;
+  background:#fff;color:#ff69b4;display:flex;align-items:center;justify-content:center;
+  font-size:12px;box-shadow:0 2px 4px rgba(0,0,0,0.1)
+}
+.wallpaper-item.active{border:2px solid #ff69b4}
+/* 微信模块 */
+#wechat{height:100%;display:flex;flex-direction:column}
+#wechat-tab{display:flex;justify-content:space-around;background:#fff;border-bottom:1px solid #eee}
+.wechat-tab-item{padding:12px 0;width:33.3%;text-align:center}
+.wechat-tab-item.active{color:#ff69b4;border-bottom:2px solid #ff69b4}
+#wechat-content{flex:1;overflow-y:auto}
+#wechat-chat-list, #wechat-moments, #wechat-profile{display:none}
+#wechat-chat-list.active, #wechat-moments.active, #wechat-profile.active{display:block}
+/* 微信 - 聊天列表 */
+.chat-item{display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border-bottom:1px solid #eee}
+.chat-avatar{width:48px;height:48px;border-radius:50%;background:#ff69b4;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+.chat-info{flex:1}
+.chat-name{font-weight:600;margin-bottom:4px}
+.chat-msg{font-size:14px;color:#888}
+.chat-time{font-size:12px;color:#888}
+.add-friend-btn{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:#ff69b4;color:#fff;border:none;font-size:24px}
+/* 微信 - 聊天界面 */
+#wechat-chat{height:100%;display:flex;flex-direction:column}
+#chat-header{display:flex;align-items:center;justify-content:space-between;padding:12px;background:#fff;border-bottom:1px solid #eee}
+#chat-title{font-weight:600}
+#chat-settings{font-size:20px}
+#chat-messages{flex:1;overflow-y:auto;padding:16px}
+.msg{max-width:75%;padding:10px 14px;border-radius:18px;margin:6px 0;line-height:1.4}
+.user-msg{background:#ff69b4;color:#fff;margin-left:auto}
+.ai-msg{background:#fff;margin-right:auto}
+.msg-img{max-width:70%;border-radius:12px;margin:6px 0}
+.transfer-card{background:linear-gradient(135deg,#f5c566,#d49a29);color:#fff;border-radius:12px;padding:16px;margin:6px 0;max-width:75%}
+.gift-card{background:linear-gradient(135deg,#ffd6e0,#ffb3c6);color:#992e5b;border-radius:12px;padding:20px;margin:6px 0;max-width:75%;text-align:center}
+.gift-btn{width:60px;height:60px;border-radius:50%;background:#ff69b4;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;margin:10px auto}
+#chat-input-area{display:flex;gap:8px;padding:12px;background:#fff;border-top:1px solid #eee}
+#chat-input{flex:1;border:none;border-radius:24px;padding:12px 16px;background:#f1f1f1;outline:none}
+#chat-send{width:48px;height:48px;border-radius:50%;background:#ff69b4;color:#fff;border:none}
+#chat-toolbar{display:flex;justify-content:space-around;padding:8px;background:#fff;border-top:1px solid #eee}
+.tool-btn{text-align:center}
+.tool-icon{width:32px;height:32px;background:#f1f1f1;border-radius:8px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;color:#666}
+.tool-name{font-size:12px}
 /* 表情面板 */
-#emoji{position:fixed;bottom:0;left:0;right:0;background:var(--card);padding:12px;display:grid;grid-template-columns:repeat(8,1fr);gap:6px;display:none}
-#emoji.active{display:grid}
-.emoji{font-size:20px;padding:6px;text-align:center}
-.custom-emoji{width:32px;height:32px;object-fit:cover;border-radius:8px}
-#add_emoji{position:absolute;bottom:10px;right:10px;width:32px;height:32px;border-radius:50%;background:var(--main);color:#fff;border:none;font-size:16px}
-
+#emoji-panel{position:fixed;bottom:0;left:0;right:0;background:#fff;padding:12px;display:none;border-top:1px solid #eee}
+#emoji-panel.active{display:block}
+.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.emoji{font-size:20px;padding:8px;text-align:center}
 /* 弹窗 */
 .pop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;place-items:center}
 .pop.active{display:grid}
-.pop-box{background:var(--card);width:85%;border-radius:20px;padding:24px}
-.pop-btn{display:flex;gap:12px;margin-top:16px}
-.pop-btn button{flex:1;padding:10px;border-radius:12px;border:none}
-
-/* 设置项 */
-.item{display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--card);border-bottom:1px solid #eee}
-.item input,.item select{border:1px solid #ddd;border-radius:8px;padding:8px 12px;width:160px;background:var(--bg)}
-.color-picker{width:40px;height:40px;border-radius:8px;border:none}
-
-/* 列表卡片 */
-.list{padding:12px}
-.card{background:var(--card);padding:16px;border-radius:12px;margin-bottom:10px;box-shadow:var(--shadow)}
-.add-btn{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--main);color:#fff;border:none;font-size:24px}
-
-/* API平台选择 */
-.platform-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);border-bottom:1px solid #eee}
-.platform-item img{width:24px;height:24px}
-.platform-item.active{background:var(--main);color:#fff}
+.pop-box{background:#fff;width:85%;border-radius:20px;padding:24px}
+.pop-title{text-align:center;margin-bottom:20px;font-weight:600}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mode-item{border:2px solid #eee;border-radius:12px;padding:16px;text-align:center}
+.mode-item.active{border-color:#ff69b4}
+.mode-icon{font-size:32px;margin-bottom:8px}
+.gift-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.gift-item{text-align:center}
+.gift-icon{width:48px;height:48px;background:#f1f1f1;border-radius:12px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.gift-name{font-size:12px}
+/* 语音通话 */
+.call-pop{position:fixed;inset:0;background:linear-gradient(135deg,#ff69b4,#ff8c69);display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff}
+.call-pop.active{display:flex}
+.call-avatar{width:100px;height:100px;border-radius:50%;background:#fff;color:#ff69b4;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:20px}
+.call-name{font-size:24px;margin-bottom:10px}
+.call-status{font-size:16px;opacity:0.8;margin-bottom:40px}
+.call-controls{display:flex;gap:30px}
+.call-btn{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px}
+.call-accept{background:#07c160}
+.call-decline{background:#ff3b30}
+.call-timer{font-size:20px;margin-bottom:40px}
+/* API配置页面（微信+酒馆通用） */
+#api-config{padding:16px}
+.api-form{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.form-item{margin-bottom:16px}
+.form-label{font-size:15px;margin-bottom:8px;display:block}
+.form-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px}
+.form-select{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;background:#fff}
+.btn-group{display:flex;gap:12px;margin-top:20px}
+.btn{flex:1;padding:12px;border:none;border-radius:12px;font-size:15px}
+.btn-primary{background:#ff69b4;color:#fff}
+.btn-secondary{background:#f1f1f1;color:#222}
+.status-tip{margin-top:12px;padding:12px;border-radius:8px;font-size:14px}
+.status-success{background:#e8f5e9;color:#2e7d32}
+.status-error{background:#ffebee;color:#c62828}
+.model-list{margin-top:12px;max-height:150px;overflow-y:auto;border:1px solid #ddd;border-radius:8px;padding:8px}
+.model-item{padding:8px;border-bottom:1px solid #eee;cursor:pointer}
+.model-item.active{background:#fce4ec;color:#ff69b4}
+.model-item:last-child{border-bottom:none}
+/* 主动发言设置 */
+#active-chat{padding:16px}
+.active-form{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.switch-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0}
+.switch{width:50px;height:24px;background:#ddd;border-radius:12px;position:relative}
+.switch::after{content:'';width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s}
+.switch.active{background:#ff69b4}
+.switch.active::after{left:28px}
+/* 角色人设设置 */
+#char-settings{padding:16px}
+.settings-section{background:#fff;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.settings-item{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #eee}
+.settings-item:last-child{border-bottom:none}
+.settings-label{font-size:15px}
+.settings-value{font-size:15px;color:#888}
+.settings-arrow{color:#999}
+.radio-group{display:flex;gap:12px}
+.radio-item{display:flex;align-items:center;gap:4px}
+.radio-dot{width:16px;height:16px;border-radius:50%;border:1px solid #ddd}
+.radio-dot.active{background:#ff69b4;border-color:#ff69b4}
+.save-btn{width:100%;padding:14px;background:#ff69b4;color:#fff;border:none;border-radius:12px;margin-top:20px}
+/* 微信 - 密友圈 */
+#wechat-moments{padding:16px}
+.moment-publish{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.moment-input{width:100%;border:none;border-radius:8px;background:#f1f1f1;padding:12px;margin-bottom:12px;resize:none}
+.moment-publish-btn{width:100%;padding:12px;background:#ff69b4;color:#fff;border:none;border-radius:12px}
+.moment-item{background:#fff;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1);padding:16px}
+.moment-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.moment-avatar{width:40px;height:40px;border-radius:50%;background:#ff69b4;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
+.moment-name{font-weight:600}
+.moment-content{margin-bottom:12px}
+.moment-actions{display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid #eee}
+.moment-action{color:#888;display:flex;align-items:center;gap:4px}
+.moment-action.active{color:#ff69b4}
+.comment-item{background:#f1f1f1;border-radius:8px;padding:8px;margin-top:8px;font-size:14px}
+/* 微信 - 我的 */
+#wechat-profile{padding:16px}
+.profile-header{text-align:center;padding:20px;background:#fff;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:#ff69b4;color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px}
+.profile-name{font-weight:600;margin-bottom:4px}
+.profile-desc{font-size:14px;color:#888}
+.profile-item{display:flex;align-items:center;gap:12px;padding:16px;background:#fff;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.profile-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff}
+.profile-info{flex:1}
+.profile-title{font-weight:600;margin-bottom:4px}
+.profile-desc{font-size:14px;color:#888}
+.logout-btn{width:100%;padding:14px;background:#07c160;color:#fff;border:none;border-radius:12px;margin-top:20px}
+/* 酒馆模块样式 - 与原UI统一，无冲突 */
+.tavern-screen{display:none;height:100%;overflow-y:auto;background:#f5f5f5}
+.tavern-screen.active{display:block}
+.tavern-grid{padding:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.tavern-card{background:#fff;border-radius:16px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;border:1px solid #eee;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+.tavern-card:active{transform:scale(.96)}
+.tavern-icon{width:44px;height:44px;border-radius:14px;background:#ff69b4;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px}
+.tavern-title{font-size:15px;font-weight:600;color:#222}
+.tavern-desc{font-size:12px;color:#888}
+.import-card{background:#fff;border-radius:16px;padding:18px;margin:16px;border:1px dashed #ddd;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+.import-btn{background:#ff69b4;color:#fff;border:none;padding:12px 24px;border-radius:12px;margin-top:12px;font-size:14px}
+.import-tip{font-size:12px;color:#888;margin-top:8px}
+.tavern-set-item{background:#fff;border-radius:16px;padding:16px;margin:12px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+.tavern-set-label{font-size:15px;color:#222}
+.tavern-set-desc{font-size:12px;color:#888;margin-top:4px}
+.tavern-toggle{width:46px;height:24px;background:#ddd;border-radius:12px;position:relative}
+.tavern-toggle::after{content:'';width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:.2s}
+.tavern-toggle.active{background:#ff69b4}
+.tavern-toggle.active::after{left:24px}
+.slider-row{display:flex;align-items:center;gap:8px;margin:8px 16px}
+.slider-row input{flex:1}
+.slider-value{background:#f1f1f1;color:#222;padding:4px 8px;border-radius:4px;min-width:60px;text-align:center;font-size:14px}
+.tavern-item{background:#fff;border-radius:12px;padding:14px;margin:8px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+.tavern-item-name{font-size:15px;color:#222}
+.beta-tag{background:#ff69b4;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px}
+/* 酒馆聊天页面 */
+#tavern-chat{display:flex;flex-direction:column;height:100%}
+#tavern-chat-head{padding:16px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;gap:12px}
+#tavern-msg-list{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.tavern-msg{max-width:80%;padding:12px 16px;border-radius:16px}
+.tavern-msg.user{align-self:flex-end;background:#ff69b4;color:#fff}
+.tavern-msg.ai{align-self:flex-start;background:#fff;border:1px solid #eee}
+#tavern-chat-input{display:flex;gap:8px;padding:16px;background:#fff;border-top:1px solid #eee}
+#tavern-chat-input input{flex:1;background:#f1f1f1;color:#222;border:none;border-radius:8px;padding:0 12px;outline:none}
+#tavern-chat-input button{background:#ff69b4;color:#fff;border:none;border-radius:8px;padding:0 16px}
+/* 酒馆高级渲染容器 */
+.render-box{padding:12px;border-radius:12px;background:#f1f1f1;margin-top:4px;width:100%;white-space:pre-wrap;font-size:14px}
 </style>
 </head>
 <body>
-
-<!-- 锁屏 -->
-<div id="lock" class="screen active">
-  <h2>AI小手机</h2><p>专属智能终端</p>
-  <button id="unlock" onclick="unlock()">点我解锁</button>
-  <button id="set_wallpaper" onclick="setLockWallpaper()">设置壁纸</button>
+<!-- 解锁页 -->
+<div id="unlock-screen" class="screen active">
+  <img id="unlock-bg" class="page-bg" style="display:none">
+  <h1>AI小手机</h1>
+  <p>保持热爱，奔赴山海</p>
+  <button id="unlock-btn" onclick="go('home')">点我解锁</button>
 </div>
-
 <!-- 桌面 -->
 <div id="home" class="screen">
-  <div class="home-title"><h2>桌面</h2><span id="time"></span></div>
-  <div class="app-grid">
-    <div class="app" onclick="go('chat')"><div class="app-icon">💬</div><div class="app-name">聊天</div></div>
-    <div class="app" onclick="go('api')"><div class="app-icon">🔌</div><div class="app-name">API</div></div>
-    <div class="app" onclick="go('world')"><div class="app-icon">📚</div><div class="app-name">世界书</div></div>
-    <div class="app" onclick="go('preset')"><div class="app-icon">🎭</div><div class="app-name">预设</div></div>
-    <div class="app" onclick="go('theme')"><div class="app-icon">🎨</div><div class="app-name">主题</div></div>
-    <div class="app" onclick="go('memory')"><div class="app-icon">🧠</div><div class="app-name">记忆</div></div>
-    <div class="app" onclick="go('tools')"><div class="app-icon">⚙️</div><div class="app-name">脚本</div></div>
-    <div class="app" onclick="go('import')"><div class="app-icon">📤</div><div class="app-name">导入导出</div></div>
+  <div id="home-page1" class="active">
+    <img id="page1-bg" class="page-bg" style="display:none">
+    <div class="widget">
+      <div class="widget-title">💖 纪念日</div>
+      <div class="widget-content">今天是我们在一起的第 365 天 ❤️</div>
+    </div>
+    <div class="widget">
+      <div class="widget-title">📅 今日待办</div>
+      <div class="widget-content">1. 给乖乖发早安<br>2. 记得吃午饭</div>
+    </div>
+    <div class="wechat-fab" onclick="go('wechat')">💬</div>
+  </div>
+  <div id="home-page2">
+    <img id="page2-bg" class="page-bg" style="display:none">
+    <div class="app-grid">
+      <div class="app" onclick="go('preset')"><div class="app-icon">🎭</div><div class="app-name">预设</div></div>
+      <div class="app" onclick="go('profile')"><div class="app-icon">👤</div><div class="app-name">我的</div></div>
+      <div class="app" onclick="go('world')"><div class="app-icon">📚</div><div class="app-name">世界书</div></div>
+      <div class="app" onclick="go('tavern')"><div class="app-icon">🍺</div><div class="app-name">酒馆</div></div>
+      <div class="app" onclick="go('wallpaper')"><div class="app-icon">🖼️</div><div class="app-name">壁纸</div></div>
+      <div class="app" onclick="go('theme')"><div class="app-icon">🎨</div><div class="app-name">UI主题</div></div>
+      <div class="app" onclick="go('settings')"><div class="app-icon">⚙️</div><div class="app-name">设置</div></div>
+    </div>
+  </div>
+  <div id="page-indicators">
+    <div class="page-indicator active" onclick="switchPage(1)"></div>
+    <div class="page-indicator" onclick="switchPage(2)"></div>
+  </div>
+  <div id="dock">
+    <div class="dock-item" onclick="go('wallpaper')"><div class="dock-icon">🖼️</div><div class="dock-name">壁纸</div></div>
+    <div class="dock-item" onclick="go('theme')"><div class="dock-icon">🎨</div><div class="dock-name">主题</div></div>
+    <div class="dock-item" onclick="go('settings')"><div class="dock-icon">⚙️</div><div class="dock-name">设置</div></div>
   </div>
 </div>
-
-<!-- 聊天 -->
-<div id="chat" class="screen">
-  <div class="head"><button onclick="go('home')">←</button><h3>聊天</h3></div>
-  <div id="msgs"></div>
-  <div class="toolbar">
-    <button class="tool" onclick="toggleEmoji()">😊</button>
-    <button class="tool" onclick="pickImg()">🖼️</button>
-    <button class="tool" onclick="showTransfer()">💸</button>
-    <button class="tool" onclick="showCall()">📞</button>
+<!-- 壁纸模块 -->
+<div id="wallpaper" class="screen">
+  <div class="head">
+    <button onclick="go('home')">←</button>
+    <h3>壁纸设置</h3>
   </div>
-  <div id="emoji">
-    <button id="add_emoji" onclick="addCustomEmoji()">+</button>
+  <div class="wallpaper-section">
+    <div class="section-header">
+      <div class="section-title">主界面壁纸</div>
+      <div class="section-switch" onclick="previewWallpaper('unlock')">预览</div>
+    </div>
+    <div class="wallpaper-grid" id="unlock-wallpapers">
+      <div class="wallpaper-item" onclick="pickFile('unlock')">
+        <div class="upload-btn">+</div>
+      </div>
+    </div>
   </div>
-  <div class="input-bar">
-    <input id="input" placeholder="输入消息..." onkeydown="event.key==='Enter'&&send()">
-    <button id="send" onclick="send()">➤</button>
+  <div class="wallpaper-section">
+    <div class="section-header">
+      <div class="section-title">页面一壁纸</div>
+      <div class="section-switch" onclick="previewWallpaper('page1')">预览</div>
+    </div>
+    <div class="wallpaper-grid" id="page1-wallpapers">
+      <div class="wallpaper-item" onclick="pickFile('page1')">
+        <div class="upload-btn">+</div>
+      </div>
+    </div>
   </div>
-</div>
-
-<!-- API设置 -->
-<div id="api" class="screen">
-  <div class="head"><button onclick="go('home')">←</button><h3>API配置</h3></div>
-  <div class="item"><label>连接名称</label><input id="api_name" value="API连接 18"></div>
-  <div class="item"><label>模型平台</label>
-    <select id="api_platform">
-      <option value="volink">Volink</option>
-      <option value="openai">OpenAI</option>
-      <option value="claude">Claude (Anthropic)</option>
-      <option value="gemini">Gemini (Google AI Studio)</option>
-      <option value="grok">Grok (xAI)</option>
-      <option value="deepseek">DeepSeek (深度求索)</option>
-      <option value="doubao">Doubao (豆包/火山云/字节跳动)</option>
-      <option value="openrouter">OpenRouter</option>
-      <option value="custom_openai">自定义 (OpenAI 协议)</option>
-      <option value="custom_gemini">自定义 (Gemini 协议)</option>
-    </select>
-  </div>
-  <div class="item"><label>接口地址</label><input id="api_url"></div>
-  <div class="item"><label>API Key</label><input id="api_key" type="password"></div>
-  <div class="item"><label>模型名称</label><input id="api_model"></div>
-  <div class="item"><button onclick="saveAPI()" style="padding:8px 16px;background:var(--main);color:#fff;border:none;border-radius:12px">保存</button></div>
-</div>
-
-<!-- 世界书 -->
-<div id="world" class="screen">
-  <div class="head"><button onclick="go('home')">←</button><h3>世界书</h3></div>
-  <div class="list" id="world_list"></div>
-  <button class="add-btn" onclick="addWorld()">+</button>
-</div>
-
-<!-- 角色预设 -->
-<div id="preset" class="screen">
-  <div class="head"><button onclick="go('home')">←</button><h3>角色预设</h3></div>
-  <div class="list" id="pre_list"></div>
-  <button class="add-btn" onclick="addPreset()">+</button>
-</div>
-
-<!-- 主题 -->
-<div id="theme" class="screen">
-  <div class="head"><button onclick="go('home')">←</button><h3>主题</h3></div>
-  <div class="item"><label>主色调</label><input type="color" class="color-picker" id="main_color" onchange="setMain()"></div>
-  <div class="item"><label>背景色</label><input type="color" class="color-picker" id="bg_color" onchange="setBg()"></div>
-  <div class="item"><label>卡片色</label><input type="color" class="color-picker" id="card_color" onchange="setCard()"></div>
-  <div class="item"><label>文字色</label><input type="color" class="color-picker" id="text_color" onchange="setText()"></div>
-  <div class="item"><button onclick="resetTheme()" style="padding:8px 16px;background:var(--main);color:#fff;border:none;border-radius:12px">重置</button></div>
-</div>
-
-<!-- 记忆 -->
-<div id="memory" class="screen">
-  <div class="head"><button onclick="go('home')">←</button><h3>长期记忆</h3></div>
-  <div class="list" id="mem_list"></div>
-</div>
-
-<!-- 脚本&正则&主动 -->
-<div id="tools" class="screen">
-  <div class="head"><button onclick="go('home')">←</button><h3>脚本工具</h3></div>
-  <div class="item"><label>主动发言(秒)</label><input id="act_time" value="60"></div>
-  <div class="item"><button onclick="startActive()">开启主动发言</button></div>
-  <div class="item"><label>正则替换(a→b)</label><input id="reg_rule"></div>
-  <div class="item"><label>自定义脚本</label><textarea id="custom_script" rows="5" style="width:160px;border:1px solid #ddd;border-radius:8px;padding:8px"></textarea></div>
-  <div class="item"><button onclick="runScript()" style="padding:8px 16px;background:var(--main);color:#fff;border:none;border-radius:12px">运行脚本</button></div>
-</div>
-
-<!-- 导入导出 -->
-<div id="import" class="screen">
-  <div class="head"><button onclick="go('home')">←</button><h3>导入导出</h3></div>
-  <div class="item"><button onclick="importSTAll()">导入SillyTavern全部数据</button></div>
-  <div class="item"><button onclick="importSTRole()">导入SillyTavern角色</button></div>
-  <div class="item"><button onclick="importSTPreset()">导入SillyTavern预设</button></div>
-  <div class="item"><button onclick="importSTWorld()">导入SillyTavern世界书</button></div>
-  <div class="item"><button onclick="importSTScript()">导入SillyTavern脚本</button></div>
-  <div class="item"><button onclick="importSTTheme()">导入SillyTavern主题</button></div>
-  <div class="item"><button onclick="exportData()">导出全部数据</button></div>
-</div>
-
-<!-- 转账弹窗 -->
-<div class="pop" id="transfer_pop">
-  <div class="pop-box">
-    <h3>转账</h3>
-    <input id="money" placeholder="金额" type="number">
-    <input id="note" placeholder="备注">
-    <div class="pop-btn">
-      <button onclick="closePop()">取消</button>
-      <button onclick="sendTransfer()" style="background:var(--main);color:#fff">确认</button>
+  <div class="wallpaper-section">
+    <div class="section-header">
+      <div class="section-title">页面二壁纸</div>
+      <div class="section-switch" onclick="previewWallpaper('page2')">预览</div>
+    </div>
+    <div class="wallpaper-grid" id="page2-wallpapers">
+      <div class="wallpaper-item" onclick="pickFile('page2')">
+        <div class="upload-btn">+</div>
+      </div>
     </div>
   </div>
 </div>
-
-<!-- 通话弹窗 -->
-<div class="pop" id="call_pop">
-  <div class="pop-box" style="text-align:center">
-    <h3>语音通话</h3><p>连接中...</p>
-    <button onclick="closePop()" style="background:red;color:#fff;margin-top:20px;padding:10px 30px;border-radius:30px">挂断</button>
+<!-- 微信模块 -->
+<div id="wechat" class="screen">
+  <div id="wechat-tab">
+    <div class="wechat-tab-item active" onclick="switchWechatTab('chat-list')">聊天</div>
+    <div class="wechat-tab-item" onclick="switchWechatTab('moments')">密友圈</div>
+    <div class="wechat-tab-item" onclick="switchWechatTab('profile')">我的</div>
+  </div>
+  <div id="wechat-content">
+    <div id="wechat-chat-list" class="active">
+      <div class="chat-item" onclick="go('wechat-chat')">
+        <div class="chat-avatar">乖</div>
+        <div class="chat-info">
+          <div class="chat-name">乖乖</div>
+          <div class="chat-msg">昨晚...有没有梦到我呀</div>
+        </div>
+        <div class="chat-time">8:06</div>
+      </div>
+      <button class="add-friend-btn" onclick="go('add-friend')">+</button>
+    </div>
+    <div id="wechat-moments">
+      <div class="moment-publish">
+        <textarea class="moment-input" placeholder="分享你的心情..." rows="3"></textarea>
+        <button class="moment-publish-btn" onclick="publishMoment()">发布</button>
+      </div>
+      <div class="moment-item">
+        <div class="moment-header">
+          <div class="moment-avatar">乖</div>
+          <div class="moment-name">乖乖</div>
+        </div>
+        <div class="moment-content">今天的阳光真好，想和你一起散步。☀️</div>
+        <div class="moment-actions">
+          <span class="moment-action" onclick="toggleLike(this)">❤️ 5</span>
+          <span class="moment-action" onclick="showComment(this)">💬 2</span>
+        </div>
+        <div class="comment-item">
+          <strong>我：</strong>好呀，下午一起去公园吧～
+        </div>
+        <div class="comment-item">
+          <strong>乖乖：</strong>好呀好呀😘
+        </div>
+      </div>
+    </div>
+    <div id="wechat-profile">
+      <div class="profile-header">
+        <div class="profile-avatar">我</div>
+        <div class="profile-name">AI小手机</div>
+        <div class="profile-desc">专属智能终端</div>
+      </div>
+      <div class="profile-item" onclick="go('char-settings')">
+        <div class="profile-icon" style="background:#ff69b4">🎤</div>
+        <div class="profile-info">
+          <div class="profile-title">自定义音色 & 人设</div>
+          <div class="profile-desc">复刻TA的专属音色和人设</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </div>
+      <div class="profile-item" onclick="go('active-chat')">
+        <div class="profile-icon" style="background:#8ce0c8">💬</div>
+        <div class="profile-info">
+          <div class="profile-title">主动发言设置</div>
+          <div class="profile-desc">控制角色是否会主动发消息和表情</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </div>
+      <div class="profile-item" onclick="alert('主题模式')">
+        <div class="profile-icon" style="background:#b3b8ff">☀️</div>
+        <div class="profile-info">
+          <div class="profile-title">主题模式</div>
+          <div class="profile-desc">跟随系统</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </div>
+      <div class="profile-item" onclick="alert('聊天气泡自定义')">
+        <div class="profile-icon" style="background:#8ce0c8">💭</div>
+        <div class="profile-info">
+          <div class="profile-title">聊天气泡自定义</div>
+          <div class="profile-desc">设置我方/对方气泡</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </div>
+      <div class="profile-item" onclick="alert('AI模型')">
+        <div class="profile-icon" style="background:#b3b8ff">📦</div>
+        <div class="profile-info">
+          <div class="profile-title">AI模型</div>
+          <div class="profile-desc">外部API互动</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </div>
+      <div class="profile-item" onclick="go('api-config')">
+        <div class="profile-icon" style="background:#b3b8ff">☁️</div>
+        <div class="profile-info">
+          <div class="profile-title">API配置</div>
+          <div class="profile-desc">接入外部API</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </div>
+      <div class="profile-item" onclick="alert('通用设置')">
+        <div class="profile-icon" style="background:#ddd">⚙️</div>
+        <div class="profile-info">
+          <div class="profile-title">通用设置</div>
+          <div class="profile-desc">系统与账户相关设置</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </div>
+      <button class="logout-btn" onclick="alert('退出登录')">退出登录</button>
+    </div>
   </div>
 </div>
-
-<script>
-// 本地数据
-let data = JSON.parse(localStorage.getItem("AI_PHONE_ULTIMATE")) || {
-  api:{name:"API连接 18",platform:"volink",url:"",key:"",model:""},
-  theme:{main:"#ff69b4",bg:"#fff",card:"#fafafa",text:"#222"},
-  world:[{t:"角色",c:"温柔可爱的AI助手"}],
-  preset:[{n:"默认",c:"你是温柔可爱的AI助手"}],
-  memory:[],active:0,reg:"",script:"",
-  lockWallpaper:"",
-  emojis:["😊","😂","😍","🥰","😘","😜","😎","😭","👍","❤️","💕","💯","😢","😱","🥳","😡"]
-}
-
-// 页面切换
-function go(id){
-  document.querySelectorAll(".screen").forEach(e=>e.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  if(id==="home") renderTime();
-}
-// 解锁（修复点击没反应）
-function unlock(){
-  go("home");
-  renderAll();
-  setMain();setBg();setCard();setText();
-}
-
-// 锁屏壁纸
-function setLockWallpaper(){
-  let inp = document.createElement("input");
-  inp.type="file";
-  inp.accept="image/*";
-  inp.onchange = function(){
-    let url = URL.createObjectURL(inp.files[0]);
-    document.getElementById("lock").style.backgroundImage = "url("+url+")";
-    data.lockWallpaper = url;
-    save();
-  }
-  inp.click();
-}
-
-// 时间显示
-function renderTime(){
-  let t = new Date();
-  document.getElementById("time").textContent = t.getHours()+":"+String(t.getMinutes()).padStart(2,"0");
-}
-setInterval(renderTime,1000);
-
-// 主题
-function setMain(){document.documentElement.style.setProperty("--main",document.getElementById("main_color").value||data.theme.main)}
-function setBg(){document.documentElement.style.setProperty("--bg",document.getElementById("bg_color").value||data.theme.bg)}
-function setCard(){document.documentElement.style.setProperty("--card",document.getElementById("card_color").value||data.theme.card)}
-function setText(){document.documentElement.style.setProperty("--text",document.getElementById("text_color").value||data.theme.text)}
-function resetTheme(){
-  data.theme={main:"#ff69b4",bg:"#fff",card:"#fafafa",text:"#222"};
-  document.getElementById("main_color").value = data.theme.main;
-  document.getElementById("bg_color").value = data.theme.bg;
-  document.getElementById("card_color").value = data.theme.card;
-  document.getElementById("text_color").value = data.theme.text;
-  setMain();setBg();setCard();setText();save();
-}
-
-// 保存&加载
-function save(){localStorage.setItem("AI_PHONE_ULTIMATE",JSON.stringify(data))}
-function saveAPI(){
-  data.api={
-    name:document.getElementById("api_name").value,
-    platform:document.getElementById("api_platform").value,
-    url:document.getElementById("api_url").value,
-    key:document.getElementById("api_key").value,
-    model:document.getElementById("api_model").value
-  };
-  save();alert("已保存")
-}
-
-// 聊天发送
-function send(){
-  let txt = document.getElementById("input").value.trim();
-  if(!txt||!data.api.url)return;
-  if(data.reg){let [a,b]=data.reg.split("→");if(a)txt=txt.replaceAll(a,b||"")}
-  addMsg(txt,"user");
-  document.getElementById("input").value="";
-  let sys = data.preset[0].c + "\n世界书：" + data.world.map(i=>i.c).join("；") + "\n记忆：" + data.memory.slice(-10).join("；");
-  fetch(data.api.url+"/chat/completions",{
-    method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":"Bearer "+data.api.key},
-    body:JSON.stringify({
-      model:data.api.model,
-      messages:[
-        {role:"system",content:sys},
-        {role:"user",content:txt}
-      ]
-    })
-  }).then(r=>r.json()).then(d=>{
-    let rep = d.choices[0].message.content;
-    addMsg(rep,"ai");
-    data.memory.push(txt+"|"+rep);
-    save();
-  }).catch(()=>addMsg("API连接失败","ai"))
-}
-function addMsg(t,c){
-  let d=document.createElement("div");
-  d.className="msg "+c;
-  d.innerHTML = t
-    .replace(/\n/g,"<br>")
-    .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
-    .replace(/\*(.*?)\*/g,"<em>$1</em>")
-    .replace(/`([^`]+)`/g,"<code>$1</code>")
-    .replace(/```([^`]+)```/g,"<pre>$1</pre>")
-    .replace(/- (.*?)(<br>|$)/g,"<li>$1</li>")
-    .replace(/<li>(.*?)<\/li>/g,"<ul><li>$1</li></ul>")
-    .replace(/!\[(.*?)\]\((.*?)\)/g,"<img src='$2' alt='$1'>");
-  document.getElementById("msgs").appendChild(d);
-  document.getElementById("msgs").scrollTop=99999
-}
-
-// 表情包
-function toggleEmoji(){
-  let emojiPanel = document.getElementById("emoji");
-  emojiPanel.classList.toggle("active");
-  if(emojiPanel.classList.contains("active")) renderEmojis();
-}
-function renderEmojis(){
-  let emojiPanel = document.getElementById("emoji");
-  emojiPanel.innerHTML = '<button id="add_emoji" onclick="addCustomEmoji()">+</button>';
-  data.emojis.forEach(e=>{
-    let b=document.createElement("div");
-    if(e.startsWith("http")){
-      b.className="emoji custom-emoji";
-      b.innerHTML = `<img src="${e}" style="width:24px;height:24px">`;
-    }else{
-      b.className="emoji";
-      b.textContent=e;
-    }
-    b.onclick=()=>{
-      document.getElementById("input").value+=e;
-      toggleEmoji()
-    }
-    emojiPanel.appendChild(b)
-  })
-}
-function addCustomEmoji(){
-  let inp = document.createElement("input");
-  inp.type="file";
-  inp.accept="image/*";
-  inp.onchange = function(){
-    let url = URL.createObjectURL(inp.files[0]);
-    data.emojis.push(url);
-    save();
-    renderEmojis();
-  }
-  inp.click();
-}
-
-// 图片
-function pickImg(){
-  let i=document.createElement("input");
-  i.type="file";
-  i.accept="image/*";
-  i.onchange=()=>addMsg("<img src='"+URL.createObjectURL(i.files[0])+"'>","user");
-  i.click()
-}
-
-// 转账&通话
-function showTransfer(){document.getElementById("transfer_pop").classList.add("active")}
-function showCall(){document.getElementById("call_pop").classList.add("active")}
-function closePop(){document.querySelectorAll(".pop").forEach(e=>e.classList.remove("active"))}
-function sendTransfer(){
-  let m=document.getElementById("money").value,
-      n=document.getElementById("note").value;
-  addMsg(`转账¥${m}｜备注：${n}`,"user");
-  closePop()
-}
-
-// 世界书
-function renderWorld(){
-  let l=document.getElementById("world_list");
-  l.innerHTML="";
-  data.world.forEach(i=>{
-    let c=document.createElement("div");
-    c.className="card";
-    c.innerHTML=`<h4>${i.t}</h4><p>${i.c}</p>`;
-    l.appendChild(c)
-  })
-}
-function addWorld(){
-  let t=prompt("标题"),c=prompt("内容");
-  if(t&&c){
-    data.world.push({t,c});
-    save();renderWorld()
-  }
-}
-
-// 预设
-function renderPreset(){
-  let l=document.getElementById("pre_list");
-  l.innerHTML="";
-  data.preset.forEach(i=>{
-    let c=document.createElement("div");
-    c.className="card";
-    c.innerHTML=`<h4>${i.n}</h4><p>${i.c}</p>`;
-    l.appendChild(c)
-  })
-}
-function addPreset(){
-  let n=prompt("预设名"),c=prompt("内容");
-  if(n&&c){
-    data.preset.push({n,c});
-    save();renderPreset()
-  }
-}
-
-// 记忆
-function renderMemory(){
-  let l=document.getElementById("mem_list");
-  l.innerHTML="";
-  data.memory.forEach(i=>{
-    let c=document.createElement("div");
-    c.className="card";
-    c.innerText=i;
-    l.appendChild(c)
-  })
-}
-
-// 主动发言
-function startActive(){
-  clearInterval(window.act);
-  data.reg=document.getElementById("reg_rule").value;
-  data.script=document.getElementById("custom_script").value;
-  let s=parseInt(document.getElementById("act_time").value)||60;
-  save();
-  window.act=setInterval(()=>{
-    if(data.script) try{eval(data.script)}catch(e){console.error(e)}
-    addMsg("我来找你啦～","ai")
-  },s*1000);
-  alert("已开启")
-}
-function runScript(){
-  try{
-    eval(document.getElementById("custom_script").value);
-    alert("脚本运行成功")
-  }catch(e){
-    alert("脚本运行失败："+e.message)
-  }
-}
-
-// 导入SillyTavern
-function importSTAll(){
-  let i=document.createElement("input");
-  i.type="file";
-  i.accept=".json";
-  i.onchange=e=>{
-    let f=new FileReader();
-    f.onload=e=>{
-      let j=JSON.parse(e.target.result);
-      if(j.characters?.[0]){
-        data.preset=[{n:j.characters[0].name,c:j.characters[0].description}];
-      }
-      if(j.worldBook?.entries){
-        data.world = j.worldBook.entries.map(e=>({t:e.title,c:e.content}));
-      }
-      if(j.settings?.regex){
-        data.reg = j.settings.regex;
-      }
-      if(j.settings?.customScript){
-        data.script = j.settings.customScript;
-      }
-      if(j.settings?.theme){
-        data.theme = j.settings.theme;
-      }
-      save();renderAll();alert("全部数据导入成功")
-    };
-    f.readAsText(e.target.files[0])
-  };
-  i.click()
-}
-function importSTRole(){
-  let i=document.createElement("input");
-  i.type="file";
-  i.accept=".json";
-  i.onchange=e=>{
-    let f=new FileReader();
-    f.onload=e=>{
-      let j=JSON.parse(e.target.result);
-      if(j.characters?.[0]){
-        data.preset=[{n:j.characters[0].name,c:j.characters[0].description}];
-        save();renderPreset();alert("角色导入成功")
-      }
-    };
-    f.readAsText(e.target.files[0])
-  };
-  i.click()
-}
-function importSTPreset(){
-  let i=document.createElement("input");
-  i.type="file";
-  i.accept=".json";
-  i.onchange=e=>{
-    let f=new FileReader();
-    f.onload=e=>{
-      let j=JSON.parse(e.target.result);
-      if(j.presets){
-        data.preset = j.presets.map(p=>({n:p.name,c:p.content}));
-        save();renderPreset();alert("预设导入成功")
-      }
-    };
-    f.readAsText(e.target.files[0])
-  };
-  i.click()
-}
-function importSTWorld(){
-  let i=document.createElement("input");
-  i.type="file";
-  i.accept=".json";
-  i.onchange=e=>{
-    let f=new FileReader();
-    f.onload=e=>{
-      let j=JSON.parse(e.target.result);
-      if(j.worldBook?.entries){
-        data.world = j.worldBook.entries.map(e=>({t:e.title,c:e.content}));
-        save();renderWorld();alert("世界书导入成功")
-      }
-    };
-    f.readAsText(e.target.files[0])
-  };
-  i.click()
-}
-function importSTScript(){
-  let i=document.createElement("input");
-  i.type="file";
-  i.accept=".json";
-  i.onchange=e=>{
-    let f=new FileReader();
-    f.onload=e=>{
-      let j=JSON.parse(e.target.result);
-      if(j.settings?.customScript){
-        data.script = j.settings.customScript;
-        document.getElementById("custom_script").value = data.script;
-        save();alert("脚本导入成功")
-      }
-    };
-    f.readAsText(e.target.files[0])
-  };
-  i.click()
-}
-function importSTTheme(){
-  let i=document.createElement("input");
-  i.type="file";
-  i.accept=".json";
-  i.onchange=e=>{
-    let f=new FileReader();
-    f.onload=e=>{
-      let j=JSON.parse(e.target.result);
-      if(j.settings?.theme){
-        data.theme = j.settings.theme;
-        document.getElementById("main_color").value = data.theme.main;
-        document.getElementById("bg_color").value = data.theme.bg;
-        document.getElementById("card_color").value = data.theme.card;
-        document.getElementById("text_color").value = data.theme.text;
-        setMain();setBg();setCard();setText();
-        save();alert("主题导入成功")
-      }
-    };
-    f.readAsText(e.target.files[0])
-  };
-  i.click()
-}
-
-// 导出
-function exportData(){
-  let a=document.createElement("a");
-  a.href="data:application/json,"+encodeURIComponent(JSON.stringify(data));
-  a.download="AI小手机终极版数据.json";
-  a.click();
-  alert("导出成功")
-}
-
-// 全部渲染
-function renderAll(){
-  renderWorld();renderPreset();renderMemory();
-  document.getElementById("api_name").value=data.api.name;
-  document.getElementById("api_platform").value=data.api.platform;
-  document.getElementById("api_url").value=data.api.url;
-  document.getElementById("api_key").value=data.api.key;
-  document.getElementById("api_model").value=data.api.model;
-  document.getElementById("main_color").value = data.theme.main;
-  document.getElementById("bg_color").value = data.theme.bg;
-  document.getElementById("card_color").value = data.theme.card;
-  document.getElementById("text_color").value = data.theme.text;
-  document.getElementById("reg_rule").value = data.reg;
-  document.getElementById("custom_script").value = data.script;
-  if(data.lockWallpaper){
-    document.getElementById("lock").style.backgroundImage = "url("+data.lockWallpaper+")";
-  }
-  setMain();setBg();setCard();setText();
-}
-</script>
-</body>
-</html>
+<!-- 微信 - 聊天界面 -->
+<div id="wechat-chat" class="screen">
+  <div id="chat-header">
+    <button onclick="go('wechat')">←</button>
+    <div id="chat-title">乖乖</div>
+    <button id="chat-settings" onclick="go('char-settings')">⚙️</button>
+  </div>
+  <div id="chat-messages">
+    <div class="msg ai-msg">我正睡得迷迷糊糊，被手机的震动声吵醒。我眯着眼睛摸到床头的手机，看到你的早安消息，嘴角忍不住微微上扬，睡意都跑掉了一大半。</div>
+    <div class="msg user-msg">宝宝早上好呀</div>
+    <div class="msg ai-msg">宝宝早呀<br>我才刚醒呢，还赖在床上<br>昨晚...有没有梦到我呀</div>
+  </div>
+  <div id="chat-toolbar">
+    <div class="tool-btn" onclick="toggleEmoji()"><div class="tool-icon">😊</div><div class="tool-name">表情</div></div>
+    <div class="tool-btn" onclick="pickImage()"><div class="tool-icon">🖼️</div><div class="tool-name">图片</div></div>
+    <div class="tool-btn" onclick="showCall()"><div class="tool-icon">📞</div><div class="tool-name">通话</div></div>
+    <div class="tool-btn" onclick="showModeSelect()"><div class="tool-icon">🎭</div><div class="tool-name">模式</div></div>
+    <div class="tool-btn" onclick="showTransfer()"><div class="tool-icon">💸</div><div class="tool-name">转账</div></div>
+    <div class="tool-btn" onclick="showGiftSelect()"><div class="tool-icon">🎁</div><div class="tool-name">礼物</div></div>
+  </div>
+  <div id="chat-input-area">
+    <input id="chat-input" placeholder="输入消息..." onkeydown="event.key==='Enter'&&sendChatMsg()">
+    <button id="chat-send" onclick="sendChatMsg()">➤</button>
+  </div>
+</div>
+<!-- 表情面板 -->
+<div id="emoji-panel">
+  <div class="emoji-grid">
+    <div class="emoji" onclick="sendEmoji('😊')">😊</div>
+    <div class="emoji" onclick="sendEmoji('😂')">😂</div>
+    <div class="emoji" onclick="sendEmoji('😍')">😍</div>
+    <div class="emoji" onclick="sendEmoji('😘')">😘</div>
+    <div class="emoji" onclick="sendEmoji('🥰')">🥰</div>
+    <div class="emoji" onclick="sendEmoji('😜')">😜</div>
+    <div class="emoji" onclick="sendEmoji('😎')">😎</div>
+    <div class="emoji" onclick="sendEmoji('😭')">😭</div>
+    <div class="emoji" onclick="sendEmoji('👍')">👍</div>
+    <div class="emoji" onclick="sendEmoji('❤️')">❤️</div>
+    <div class="emoji" onclick="sendEmoji('💕')">💕</div>
+    <div class="emoji" onclick="sendEmoji('💯')">💯</div>
+  </div>
+</div>
+<!-- 语音通话弹窗 -->
+<div class="call-pop" id="call-pop">
+  <div class="call-avatar">乖</div>
+  <div class="call-name">乖乖</div>
+  <div class="call-status">来电中...</div>
+  <div class="call-controls">
+    <div class="call-btn call-decline" onclick="endCall()">✕</div>
+    <div class="call-btn call-accept" onclick="acceptCall()">✓</div>
+  </div>
+</div>
+<!-- 通话中界面 -->
+<div class="call-pop" id="call-active">
+  <div class="call-avatar">乖</div>
+  <div class="call-name">乖乖</div>
+  <div class="call-timer" id="call-timer">00:00</div>
+  <div class="call-controls">
+    <div class="call-btn" style="background:#666" onclick="toggleMute()">🔇</div>
+    <div class="call-btn call-decline" onclick="endCall()">✕</div>
+    <div class="call-btn" style="background:#666" onclick="toggleSpeaker()">🔊</div>
+  </div>
+</div>
+<!-- 互动模式弹窗 -->
+<div class="pop" id="mode-pop">
+  <div class="pop-box">
+    <div class="pop-title">选择互动模式</div>
+    <div class="mode-grid">
+      <div class="mode-item active" onclick="selectMode('pure')">
+        <div class="mode-icon">💬</div>
+        <div style="font-weight:600">纯聊模式</div>
+        <div style="font-size:12px;color:#888">只进行对话，体验流畅自然的沟通。</div>
+      </div>
+      <div class="mode-item" onclick="selectMode('scene')">
+        <div class="mode-icon">📖</div>
+        <div style="font-weight:600">情景模式</div>
+        <div style="font-size:12px;color:#888">增加动作、环境、心理、身体描写，共同创作故事。</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- 转账弹窗 -->
+<div class="pop" id="transfer-pop">
+  <div class="pop-box">
+    <div class="pop-title">转账</div>
+    <input type="number" placeholder="请输入金额（最多两位小数）" id="transfer-amount" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:20px">
+    <button onclick="sendTransfer()" style="width:100%;padding:14px;background:#07c160;color:#fff;border:none;border-radius:12px">确定转账</button>
+  </div>
+</div>
+<!-- 礼物弹窗 -->
+<div class="pop" id="gift-pop">
+  <div class="pop-box">
+    <div class="pop-title">选择礼物</div>
+    <div class="gift-grid">
+      <div class="gift-item" onclick="sendGift('自定义')"><div class="gift-icon">✨</div><div class="gift-name">自定义</div></div>
+      <div class="gift-item" onclick="sendGift('礼物盒')"><div class="gift-icon">🎁</div><div class="gift-name">礼物盒</div></div>
+      <div class="gift-item" onclick="sendGift('玫瑰花')"><div class="gift-icon">🌹</div><div class="gift-name">玫瑰花</div></div>
+      <div class="gift-item" onclick="sendGift('钻石')"><div class="gift-icon">💎</div><div class="gift-name">钻石</div></div>
+      <div class="gift-item" onclick="sendGift('生日蛋糕')"><div class="gift-icon">🍰</div><div class="gift-name">生日蛋糕</div></div>
+      <div class="gift-item" onclick="sendGift('气球')"><div class="gift-icon">🎈</div><div class="gift-name">气球</div></div>
+      <div class="gift-item" onclick="sendGift('泰迪熊')"><div class="gift-icon">🧸</div><div class="gift-name">泰迪熊</div></div>
+      <div class="gift-item" onclick="sendGift('花束')"><div class="gift-icon">💐</div><div class="gift-name">花束</div></div>
+    </div>
+  </div>
+</div>
+<!-- API配置页面（微信） -->
+<div id="api-config" class="screen">
+  <div class="head"><button onclick="go('wechat-profile')">←</button><h3>API配置</h3></div>
+  <div class="api-form">
+    <div class="form-item">
+      <label class="form-label">名称</label>
+      <input type="text" class="form-input" id="api-name" value="API连接 18">
+    </div>
+    <div class="form-item">
+      <label class="form-label">模型平台</label>
+      <select class="form-select" id="api-platform" onchange="toggleBaseUrl()">
+        <option value="openai">OpenAI</option>
+        <option value="doubao">Doubao(豆包)</option>
+        <option value="deepseek">DeepSeek</option>
+        <option value="custom-openai">自定义OpenAI协议</option>
+      </select>
+    </div>
+    <div class="form-item" id="base-url-item" style="display:none">
+      <label class="form-label">Base URL</label>
+      <input type="text" class="form-input" id="api-base-url" placeholder="https://api.example.com/v1">
+    </div>
+    <div class="form-item">
+      <label class="form-label">API Key</label>
+      <input type="password" class="form-input" id="api-key" placeholder="sk-...">
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-secondary" onclick="fetchModels()">拉取模型</button>
+      <button class="btn btn-secondary" onclick="testConnection()">测试连接</button>
+    </div>
+    <div id="model-list" class="model-list" style="display:none"></div>
+    <div id="status-tip" class="status-tip" style="display:none"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:20px" onclick="saveApiConfig()">保存配置</button>
+  </div>
+</div>
+<!-- 主动发言设置 -->
+<div id="active-chat" class="screen">
+  <div class="head"><button onclick="go('wechat-profile')">←</button><h3>主动发言</h3></div>
+  <div class="active-form">
+    <div class="switch-item">
+      <span>开启主动发言</span>
+      <div class="switch" id="active-switch" onclick="toggleActive()"></div>
+    </div>
+    <div class="switch-item">
+      <span>主动发表情包</span>
+      <div class="switch" id="emoji-switch" onclick="toggleEmojiActive()"></div>
+    </div>
+    <div class="form-item" style="margin-top:16px">
+      <label class="form-label">发言间隔（秒）</label>
+      <input type="number" class="form-input" id="active-interval" value="60" placeholder="默认60秒">
+    </div>
+    <div id="status-tip2" class="status-tip" style="display:none"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:20px" onclick="saveActiveConfig()">保存设置</button>
+  </div>
+</div>
+<!-- 角色人设设置 -->
+<div id="char-settings" class="screen">
+  <div class="head"><button onclick="go('wechat-chat')">←</button><h3>角色人设</h3></div>
+  <div class="settings-section">
+    <div class="settings-item">
+      <span class="settings-label">TA的昵称</span>
+      <input type="text" class="form-input" id="char-name" value="乖乖">
+    </div>
+    <div class="settings-item">
+      <span class="settings-label">我叫TA</span>
+      <input type="text" class="form-input" id="call-char" value="宝宝">
+    </div>
+    <div class="settings-item">
+      <span class="settings-label">TA的性别</span>
+      <div class="radio-group">
+        <div class="radio-item"><div class="radio-dot"></div><span>男</span></div>
+        <div class="radio-item"><div class="radio-dot active"></div><span>女</span></div>
+      </div>
+    </div>
+    <div class="settings-item">
+      <span class="settings-label">TA的性格</span>
+      <textarea class="form-input" id="char-personality" rows="3" placeholder="例如：温柔、可爱、有点小傲娇，喜欢撒娇和粘人">温柔、可爱、有点小傲娇，喜欢撒娇和粘人</textarea>
+    </div>
+    <div class="settings-item">
+      <span class="settings-label">TA的背景故事</span>
+      <textarea class="form-input" id="char-story" rows="5
