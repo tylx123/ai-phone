@@ -122,7 +122,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             padding: 24px;
             transform: translateY(-100%);
             transition: transform 0.3s ease;
@@ -156,19 +156,35 @@
             outline: none;
         }
 
-        #saveConfig {
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .btn {
+            flex: 1;
             background-color: #007aff;
             border: none;
             border-radius: 20px;
-            padding: 12px 24px;
+            padding: 12px;
             color: #fff;
             font-size: 14px;
             cursor: pointer;
             transition: background-color 0.2s;
         }
 
-        #saveConfig:hover {
+        .btn:hover {
             background-color: #0056b3;
+        }
+
+        .btn-secondary {
+            background-color: #2c2c2c;
+        }
+
+        .btn-secondary:hover {
+            background-color: #3a3a3a;
         }
 
         .config-toggle {
@@ -216,7 +232,7 @@
             </div>
             <div class="config-item" id="apiUrlItem" style="display: none;">
                 <label>API 接口地址</label>
-                <input type="text" id="apiUrlInput" placeholder="https://api.example.com/v1/chat/completions">
+                <input type="text" id="apiUrlInput" placeholder="https://api.example.com/v1">
             </div>
             <div class="config-item">
                 <label>API 密钥</label>
@@ -226,10 +242,15 @@
                 <label>模型</label>
                 <select id="modelSelect">
                     <option value="gpt-3.5-turbo">GPT-3.5-turbo</option>
-                    <option value="gpt-4">GPT-4</option>
                 </select>
             </div>
-            <button id="saveConfig">保存</button>
+            <div class="btn-group">
+                <button id="fetchModelsBtn" class="btn btn-secondary" style="display: none;">拉取模型</button>
+                <button id="testConnectionBtn" class="btn btn-secondary" style="display: none;">测试链接</button>
+            </div>
+            <div class="btn-group">
+                <button id="saveConfig" class="btn">保存</button>
+            </div>
         </div>
     </div>
 
@@ -246,6 +267,8 @@
         const apiKeyInput = document.getElementById('apiKeyInput');
         const modelSelect = document.getElementById('modelSelect');
         const configName = document.getElementById('configName');
+        const fetchModelsBtn = document.getElementById('fetchModelsBtn');
+        const testConnectionBtn = document.getElementById('testConnectionBtn');
 
         // 平台与模型的映射关系
         const platformModels = {
@@ -253,7 +276,7 @@
             'doubao': ['doubao-pro', 'doubao-4k', 'doubao-32k'],
             'deepseek': ['deepseek-chat', 'deepseek-coder'],
             'openrouter': ['openrouter/auto', 'anthropic/claude-3-sonnet'],
-            'custom-openai': ['gpt-3.5-turbo', 'gpt-4', '自定义模型']
+            'custom-openai': [] // 自定义平台的模型将通过拉取获取
         };
 
         let currentConfig = {
@@ -287,6 +310,12 @@
             toggleApiUrlVisibility();
         });
 
+        // 拉取模型按钮点击事件
+        fetchModelsBtn.addEventListener('click', fetchModels);
+
+        // 测试链接按钮点击事件
+        testConnectionBtn.addEventListener('click', testConnection);
+
         // 保存配置
         saveConfig.addEventListener('click', () => {
             currentConfig = {
@@ -318,10 +347,24 @@
 
             try {
                 let fetchUrl;
+                let requestBody;
+
                 if (currentConfig.platform === 'custom-openai') {
-                    fetchUrl = currentConfig.apiUrl;
+                    // 自定义OpenAI协议，使用标准请求体
+                    fetchUrl = `${currentConfig.apiUrl}/chat/completions`;
+                    requestBody = {
+                        model: currentConfig.model,
+                        messages: [{ role: 'user', content: text }]
+                    };
                 } else {
+                    // 使用Vercel后端
                     fetchUrl = 'https://ai-phone-3jj5kynr2.vercel.app/api/chat';
+                    requestBody = {
+                        platform: currentConfig.platform,
+                        apiKey: currentConfig.apiKey,
+                        model: currentConfig.model,
+                        messages: [{ role: 'user', content: text }]
+                    };
                 }
 
                 const response = await fetch(fetchUrl, {
@@ -330,13 +373,12 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${currentConfig.apiKey}`
                     },
-                    body: JSON.stringify({
-                        platform: currentConfig.platform,
-                        apiKey: currentConfig.apiKey,
-                        model: currentConfig.model,
-                        messages: [{ role: 'user', content: text }]
-                    })
+                    body: JSON.stringify(requestBody)
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const data = await response.json();
                 const reply = data.choices?.[0]?.message?.content || '回复失败';
@@ -360,20 +402,101 @@
             const selectedPlatform = platformSelect.value;
             const models = platformModels[selectedPlatform] || [];
             modelSelect.innerHTML = '';
-            models.forEach(model => {
+            if (models.length === 0) {
                 const option = document.createElement('option');
-                option.value = model;
-                option.textContent = model;
+                option.value = '';
+                option.textContent = '请先拉取模型';
                 modelSelect.appendChild(option);
-            });
+            } else {
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    modelSelect.appendChild(option);
+                });
+            }
         }
 
-        // 切换API地址输入框的可见性
+        // 切换API地址输入框和按钮的可见性
         function toggleApiUrlVisibility() {
             if (platformSelect.value === 'custom-openai') {
                 apiUrlItem.style.display = 'block';
+                fetchModelsBtn.style.display = 'block';
+                testConnectionBtn.style.display = 'block';
             } else {
                 apiUrlItem.style.display = 'none';
+                fetchModelsBtn.style.display = 'none';
+                testConnectionBtn.style.display = 'none';
+            }
+        }
+
+        // 拉取模型列表
+        async function fetchModels() {
+            const apiUrl = apiUrlInput.value.trim();
+            const apiKey = apiKeyInput.value.trim();
+
+            if (!apiUrl || !apiKey) {
+                addMessage('❌ 请先填写API接口地址和密钥', 'ai-msg');
+                return;
+            }
+
+            try {
+                addMessage('🔄 正在拉取模型列表...', 'ai-msg');
+                const response = await fetch(`${apiUrl}/models`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const models = data.data || [];
+
+                if (models.length === 0) {
+                    addMessage('❌ 未获取到任何模型', 'ai-msg');
+                    return;
+                }
+
+                // 更新模型列表
+                platformModels['custom-openai'] = models.map(m => m.id);
+                updateModelList();
+                modelSelect.value = models[0].id;
+                addMessage(`✅ 成功拉取 ${models.length} 个模型`, 'ai-msg');
+            } catch (error) {
+                addMessage(`❌ 拉取模型失败: ${error.message}`, 'ai-msg');
+            }
+        }
+
+        // 测试链接
+        async function testConnection() {
+            const apiUrl = apiUrlInput.value.trim();
+            const apiKey = apiKeyInput.value.trim();
+
+            if (!apiUrl || !apiKey) {
+                addMessage('❌ 请先填写API接口地址和密钥', 'ai-msg');
+                return;
+            }
+
+            try {
+                addMessage('🔄 正在测试链接...', 'ai-msg');
+                const response = await fetch(`${apiUrl}/models`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`
+                    }
+                });
+
+                if (response.ok) {
+                    addMessage('✅ 连接成功！', 'ai-msg');
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+            } catch (error) {
+                addMessage(`❌ 连接失败: ${error.message}`, 'ai-msg');
             }
         }
     </script>
