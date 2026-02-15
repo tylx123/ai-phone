@@ -338,8 +338,8 @@
                     const reply = data.choices?.[0]?.message?.content || '回复失败';
                     addMessage(reply, 'ai-msg');
                 } else {
-                    // 其他平台：默认走后端转发（原有逻辑，不变）
-                    fetchUrl = 'https://ai-phone-3jj5kynr2.vercel.app/api/chat';
+                    // 其他平台：默认走后端转发（地址已更新）
+                    fetchUrl = 'https://ai-phone-six.vercel.app/api/chat';
                     requestBody = {
                         platform: currentConfig.platform,
                         apiKey: currentConfig.apiKey,
@@ -366,7 +366,7 @@
                 if (currentConfig.platform === 'custom-openai') {
                     addMessage(`⚠️ 直连发送失败(${error.message})，尝试后端转发...`, 'ai-msg');
                     try {
-                        const fetchUrl = 'https://ai-phone-3jj5kynr2.vercel.app/api/chat';
+                        const fetchUrl = 'https://ai-phone-six.vercel.app/api/chat';
                         const requestBody = {
                             platform: 'custom-openai',
                             apiUrl: currentConfig.apiUrl,
@@ -474,7 +474,7 @@
                 // 第二步：直连失败（大概率CORS），自动走后端转发兜底
                 addMessage(`⚠️ 直连失败(${error.message})，尝试后端转发...`, 'ai-msg');
                 try {
-                    const forwardResponse = await fetch('https://ai-phone-3jj5kynr2.vercel.app/api/chat', {
+                    const forwardResponse = await fetch('https://ai-phone-six.vercel.app/api/chat', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -531,7 +531,7 @@
                 // 第二步：直连失败，自动走后端转发兜底
                 addMessage(`⚠️ 直连失败(${error.message})，尝试后端转发...`, 'ai-msg');
                 try {
-                    const forwardResponse = await fetch('https://ai-phone-3jj5kynr2.vercel.app/api/chat', {
+                    const forwardResponse = await fetch('https://ai-phone-six.vercel.app/api/chat', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
