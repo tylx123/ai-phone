@@ -1,1171 +1,1412 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>AI小手机·完整版</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-body{max-width:420px;margin:0 auto;height:100vh;overflow:hidden;background:#f5f5f5;color:#222}
-.screen{display:none;height:100%;overflow-y:auto}
-.active{display:block}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI小手机 · 酒馆完全整合版</title>
+    <style>
+        /* ========== 全局样式 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
 
-/* 解锁页 */
-#unlock-screen{
-  position:relative;
-  background:linear-gradient(135deg,#ff69b4,#ff8c69);
-  color:#fff;text-align:center;padding-top:40%;
-  transition:background 0.3s;
-}
-#unlock-screen.wallpaper-set{
-  background:transparent !important;
-}
-#unlock-bg{
-  position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-1;
-}
-#unlock-screen h1{font-size:48px;margin-bottom:20px}
-#unlock-screen p{font-size:20px;opacity:0.8;margin-bottom:40px}
-#unlock-btn{
-  padding:16px 40px;border:none;border-radius:30px;background:#fff;color:#ff69b4;font-size:20px
-}
+        body {
+            max-width: 420px;
+            margin: 0 auto;
+            height: 100vh;
+            background: #f5f5f5;
+            color: #222;
+            overflow: hidden;
+            position: relative;
+        }
 
-/* 桌面 */
-#home{position:relative;height:100%}
-#home-page1, #home-page2{
-  position:relative;height:100%;padding:20px;display:none;
-}
-#home-page1.active, #home-page2.active{display:block}
-#home-page1.wallpaper-set, #home-page2.wallpaper-set{
-  background:transparent !important;
-}
-.page-bg{
-  position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-1;
-}
-#page-indicators{display:flex;justify-content:center;gap:8px;padding:10px}
-.page-indicator{width:8px;height:8px;border-radius:50%;background:#ddd}
-.page-indicator.active{background:#ff69b4}
+        .screen {
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
 
-#dock{
-  display:flex;justify-content:space-around;align-items:center;
-  padding:12px;background:#fff;border-radius:20px;
-  margin:0 20px 20px;box-shadow:0 4px 12px rgba(0,0,0,0.1)
-}
-.dock-item{text-align:center}
-.dock-icon{width:40px;height:40px;background:#ff69b4;border-radius:12px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;color:#fff}
-.dock-name{font-size:12px}
+        .screen.active {
+            display: block;
+        }
 
-.app-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.app{background:#fff;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.app-icon{width:40px;height:40px;margin:0 auto 8px;background:#ff69b4;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
-.app-name{font-size:12px}
+        /* 通用头部 */
+        .head {
+            padding: 16px;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .head button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #ff69b4;
+        }
+        .head h3 {
+            margin-left: 12px;
+            font-size: 18px;
+            font-weight: 600;
+        }
 
-.widget{background:#fff;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.widget-title{font-weight:600;margin-bottom:8px}
-.widget-content{font-size:14px;color:#666}
-.wechat-fab{
-  position:fixed;bottom:120px;right:30px;
-  width:56px;height:56px;border-radius:50%;
-  background:#ff69b4;color:#fff;
-  display:flex;align-items:center;justify-content:center;
-  font-size:24px;box-shadow:0 4px 12px rgba(255,105,180,0.4)
-}
+        /* 解锁屏幕 */
+        #unlock-screen {
+            position: relative;
+            background: linear-gradient(135deg, #ff69b4, #ff8c69);
+            color: white;
+            text-align: center;
+            padding-top: 40%;
+        }
+        #unlock-screen.wallpaper-set {
+            background: transparent !important;
+        }
+        #unlock-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+        #unlock-screen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        #unlock-screen p {
+            font-size: 20px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        #unlock-btn, #unlock-back-btn {
+            padding: 16px 40px;
+            border: none;
+            border-radius: 30px;
+            background: white;
+            color: #ff69b4;
+            font-size: 20px;
+            margin: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-weight: 600;
+        }
+        #unlock-back-btn {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            backdrop-filter: blur(5px);
+        }
 
-/* 通用头部 */
-.head{
-  padding:16px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center
-}
-.head button{border:none;background:transparent;font-size:20px}
-.head h3{margin-left:16px}
+        /* 桌面 */
+        #home {
+            position: relative;
+            height: 100%;
+            background: #fff;
+        }
+        #home-page1, #home-page2 {
+            position: relative;
+            height: 100%;
+            padding: 20px;
+            display: none;
+            overflow-y: auto;
+        }
+        #home-page1.active, #home-page2.active {
+            display: block;
+        }
+        #home-page1.wallpaper-set, #home-page2.wallpaper-set {
+            background: transparent !important;
+        }
+        .page-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+        #page-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(5px);
+            position: absolute;
+            bottom: 90px;
+            left: 0;
+            right: 0;
+            z-index: 5;
+        }
+        .page-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ddd;
+        }
+        .page-indicator.active {
+            background: #ff69b4;
+        }
 
-/* 壁纸模块 */
-#wallpaper{padding:16px}
-.wallpaper-section{
-  background:#fff;border-radius:16px;padding:16px;margin-bottom:20px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.1)
-}
-.section-header{
-  display:flex;justify-content:space-between;align-items:center;margin-bottom:16px
-}
-.section-title{font-size:18px;font-weight:600}
-.section-switch{
-  padding:6px 12px;background:#f1f1f1;border-radius:12px;font-size:14px
-}
-.wallpaper-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:12px
-}
-.wallpaper-item{
-  position:relative;border-radius:12px;overflow:hidden;aspect-ratio:9/16;
-  background:#f1f1f1;cursor:pointer
-}
-.wallpaper-item img,.wallpaper-item video{
-  width:100%;height:100%;object-fit:cover
-}
-.wallpaper-item .upload-btn{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:40px;height:40px;border-radius:50%;background:#ff69b4;color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:20px
-}
-.wallpaper-item .apply-btn{
-  position:absolute;bottom:8px;right:8px;width:24px;height:24px;border-radius:50%;
-  background:#fff;color:#ff69b4;display:flex;align-items:center;justify-content:center;
-  font-size:12px;box-shadow:0 2px 4px rgba(0,0,0,0.1)
-}
-.wallpaper-item.active{border:2px solid #ff69b4}
+        #dock {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            margin: 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+        .dock-item {
+            text-align: center;
+            cursor: pointer;
+            flex: 1;
+        }
+        .dock-icon {
+            width: 44px;
+            height: 44px;
+            background: #ff69b4;
+            border-radius: 12px;
+            margin: 0 auto 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+        .dock-name {
+            font-size: 11px;
+            color: #333;
+        }
 
-/* 微信模块 */
-#wechat{height:100%;display:flex;flex-direction:column}
-#wechat-tab{display:flex;justify-content:space-around;background:#fff;border-bottom:1px solid #eee}
-.wechat-tab-item{padding:12px 0;width:33.3%;text-align:center}
-.wechat-tab-item.active{color:#ff69b4;border-bottom:2px solid #ff69b4}
-#wechat-content{flex:1;overflow-y:auto}
-#wechat-chat-list, #wechat-moments, #wechat-profile{display:none}
-#wechat-chat-list.active, #wechat-moments.active, #wechat-profile.active{display:block}
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .app {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 8px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .app:active {
+            transform: scale(0.95);
+        }
+        .app-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 8px;
+            background: #ff69b4;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        .app-name {
+            font-size: 11px;
+            color: #333;
+        }
 
-/* 微信 - 聊天列表 */
-.chat-item{display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border-bottom:1px solid #eee}
-.chat-avatar{width:48px;height:48px;border-radius:50%;background:#ff69b4;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
-.chat-info{flex:1}
-.chat-name{font-weight:600;margin-bottom:4px}
-.chat-msg{font-size:14px;color:#888}
-.chat-time{font-size:12px;color:#888}
-.add-friend-btn{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:#ff69b4;color:#fff;border:none;font-size:24px}
+        /* 微信模块 (AI小手机的核心) */
+        #wechat {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #f5f5f5;
+        }
+        #wechat-tab {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+        .wechat-tab-item {
+            padding: 12px 0;
+            width: 33.33%;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .wechat-tab-item.active {
+            color: #ff69b4;
+            border-bottom: 2px solid #ff69b4;
+        }
+        #wechat-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        #wechat-chat-list, #wechat-moments, #wechat-profile {
+            display: none;
+        }
+        #wechat-chat-list.active, #wechat-moments.active, #wechat-profile.active {
+            display: block;
+        }
 
-/* 微信 - 聊天界面 */
-#wechat-chat{height:100%;display:flex;flex-direction:column}
-#chat-header{display:flex;align-items:center;justify-content:space-between;padding:12px;background:#fff;border-bottom:1px solid #eee}
-#chat-title{font-weight:600}
-#chat-settings{font-size:20px}
-#chat-messages{flex:1;overflow-y:auto;padding:16px}
-.msg{max-width:75%;padding:10px 14px;border-radius:18px;margin:6px 0;line-height:1.4}
-.user-msg{background:#ff69b4;color:#fff;margin-left:auto}
-.ai-msg{background:#fff;margin-right:auto}
-.msg-img{max-width:70%;border-radius:12px;margin:6px 0}
-.transfer-card{background:linear-gradient(135deg,#f5c566,#d49a29);color:#fff;border-radius:12px;padding:16px;margin:6px 0;max-width:75%}
-.gift-card{background:linear-gradient(135deg,#ffd6e0,#ffb3c6);color:#992e5b;border-radius:12px;padding:20px;margin:6px 0;max-width:75%;text-align:center}
-.gift-btn{width:60px;height:60px;border-radius:50%;background:#ff69b4;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;margin:10px auto}
-#chat-input-area{display:flex;gap:8px;padding:12px;background:#fff;border-top:1px solid #eee}
-#chat-input{flex:1;border:none;border-radius:24px;padding:12px 16px;background:#f1f1f1;outline:none}
-#chat-send{width:48px;height:48px;border-radius:50%;background:#ff69b4;color:#fff;border:none}
-#chat-toolbar{display:flex;justify-content:space-around;padding:8px;background:#fff;border-top:1px solid #eee}
-.tool-btn{text-align:center}
-.tool-icon{width:32px;height:32px;background:#f1f1f1;border-radius:8px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;color:#666}
-.tool-name{font-size:12px}
+        /* 聊天列表项 */
+        .chat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ff69b4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .chat-info {
+            flex: 1;
+        }
+        .chat-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .chat-msg {
+            font-size: 13px;
+            color: #888;
+        }
+        .chat-time {
+            font-size: 11px;
+            color: #aaa;
+        }
 
-/* 表情面板 */
-#emoji-panel{position:fixed;bottom:0;left:0;right:0;background:#fff;padding:12px;display:none;border-top:1px solid #eee}
-#emoji-panel.active{display:block}
-.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
-.emoji{font-size:20px;padding:8px;text-align:center}
+        /* 聊天界面 */
+        #wechat-chat {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #e5ddd5;
+        }
+        #chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #ff69b4;
+            color: white;
+        }
+        #chat-header button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        #chat-title {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            margin: 4px 0;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .message.user {
+            background: #ff69b4;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .message.ai {
+            background: white;
+            color: #222;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .message-img {
+            max-width: 70%;
+            border-radius: 12px;
+            margin: 6px 0;
+            align-self: flex-start;
+        }
+        .transfer-card, .gift-card {
+            max-width: 75%;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 6px 0;
+            color: white;
+            align-self: flex-start;
+        }
+        .transfer-card {
+            background: linear-gradient(135deg, #f5c566, #d49a29);
+        }
+        .gift-card {
+            background: linear-gradient(135deg, #ffd6e0, #ffb3c6);
+            color: #992e5b;
+            text-align: center;
+        }
+        .gift-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #ff69b4;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 10px auto;
+        }
+        #chat-input-area {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: #f0f0f0;
+            border-top: 1px solid #ddd;
+        }
+        #chat-input {
+            flex: 1;
+            border: none;
+            border-radius: 24px;
+            padding: 12px 16px;
+            background: white;
+            outline: none;
+            font-size: 14px;
+        }
+        #chat-send {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #ff69b4;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        #chat-toolbar {
+            display: flex;
+            justify-content: space-around;
+            padding: 8px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+        .tool-btn {
+            text-align: center;
+            cursor: pointer;
+        }
+        .tool-icon {
+            width: 36px;
+            height: 36px;
+            background: #f1f1f1;
+            border-radius: 8px;
+            margin: 0 auto 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 18px;
+        }
+        .tool-name {
+            font-size: 10px;
+        }
 
-/* 弹窗 */
-.pop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;place-items:center}
-.pop.active{display:grid}
-.pop-box{background:#fff;width:85%;border-radius:20px;padding:24px}
-.pop-title{text-align:center;margin-bottom:20px;font-weight:600}
-.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.mode-item{border:2px solid #eee;border-radius:12px;padding:16px;text-align:center}
-.mode-item.active{border-color:#ff69b4}
-.mode-icon{font-size:32px;margin-bottom:8px}
-.gift-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.gift-item{text-align:center}
-.gift-icon{width:48px;height:48px;background:#f1f1f1;border-radius:12px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:20px}
-.gift-name{font-size:12px}
+        /* 表情面板 */
+        #emoji-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px;
+            display: none;
+            border-top: 1px solid #eee;
+            z-index: 200;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        #emoji-panel.active {
+            display: block;
+        }
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+        }
+        .emoji {
+            font-size: 24px;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+        }
 
-/* 语音通话 */
-.call-pop{position:fixed;inset:0;background:linear-gradient(135deg,#ff69b4,#ff8c69);display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff}
-.call-pop.active{display:flex}
-.call-avatar{width:100px;height:100px;border-radius:50%;background:#fff;color:#ff69b4;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:20px}
-.call-name{font-size:24px;margin-bottom:10px}
-.call-status{font-size:16px;opacity:0.8;margin-bottom:40px}
-.call-controls{display:flex;gap:30px}
-.call-btn{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px}
-.call-accept{background:#07c160}
-.call-decline{background:#ff3b30}
-.call-timer{font-size:20px;margin-bottom:40px}
+        /* 壁纸模块 */
+        #wallpaper {
+            padding: 16px;
+        }
+        .wallpaper-section {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .section-switch {
+            padding: 6px 12px;
+            background: #f1f1f1;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .wallpaper-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .wallpaper-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 9/16;
+            background: #f1f1f1;
+            cursor: pointer;
+        }
+        .wallpaper-item img, .wallpaper-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .wallpaper-item .upload-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ff69b4;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .wallpaper-item .apply-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            color: #ff69b4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        .wallpaper-item.active {
+            border: 2px solid #ff69b4;
+        }
 
-/* API配置页面 */
-#api-config{padding:16px}
-.api-form{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.form-item{margin-bottom:16px}
-.form-label{font-size:15px;margin-bottom:8px;display:block}
-.form-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px}
-.form-select{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;background:#fff}
-.btn-group{display:flex;gap:12px;margin-top:20px}
-.btn{flex:1;padding:12px;border:none;border-radius:12px;font-size:15px}
-.btn-primary{background:#ff69b4;color:#fff}
-.btn-secondary{background:#f1f1f1;color:#222}
-.status-tip{margin-top:12px;padding:12px;border-radius:8px;font-size:14px}
-.status-success{background:#e8f5e9;color:#2e7d32}
-.status-error{background:#ffebee;color:#c62828}
-.model-list{margin-top:12px;max-height:150px;overflow-y:auto;border:1px solid #ddd;border-radius:8px;padding:8px}
-.model-item{padding:8px;border-bottom:1px solid #eee;cursor:pointer}
-.model-item.active{background:#fce4ec;color:#ff69b4}
-.model-item:last-child{border-bottom:none}
+        /* 酒馆模块 (所有Tavern相关界面) */
+        .tavern-screen {
+            background: #1a1a2e;
+            color: #eee;
+        }
+        .tavern-head {
+            background: #16213e;
+            border-bottom: 1px solid #0f3460;
+            color: white;
+        }
+        .tavern-head button {
+            color: #a6d0fa;
+        }
+        .tavern-card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 16px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .tavern-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #a6d0fa;
+        }
+        .tavern-btn {
+            background: #0f3460;
+            border: none;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 4px;
+        }
+        .tavern-input {
+            background: #0f3460;
+            border: 1px solid #1a4d8c;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .tavern-list-item {
+            background: #0f3460;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tavern-switch {
+            width: 40px;
+            height: 20px;
+            background: #555;
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+        }
+        .tavern-switch.active {
+            background: #a6d0fa;
+        }
+        .tavern-switch::after {
+            content: '';
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            transition: 0.2s;
+        }
+        .tavern-switch.active::after {
+            left: 21px;
+        }
 
-/* 主动发言设置 */
-#active-chat{padding:16px}
-.active-form{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.switch-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0}
-.switch{width:50px;height:24px;background:#ddd;border-radius:12px;position:relative}
-.switch::after{content:'';width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s}
-.switch.active{background:#ff69b4}
-.switch.active::after{left:28px}
-
-/* 角色人设设置 */
-#char-settings{padding:16px}
-.settings-section{background:#fff;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.settings-item{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #eee}
-.settings-item:last-child{border-bottom:none}
-.settings-label{font-size:15px}
-.settings-value{font-size:15px;color:#888}
-.settings-arrow{color:#999}
-.radio-group{display:flex;gap:12px}
-.radio-item{display:flex;align-items:center;gap:4px}
-.radio-dot{width:16px;height:16px;border-radius:50%;border:1px solid #ddd}
-.radio-dot.active{background:#ff69b4;border-color:#ff69b4}
-.save-btn{width:100%;padding:14px;background:#ff69b4;color:#fff;border:none;border-radius:12px;margin-top:20px}
-
-/* 微信 - 密友圈 */
-#wechat-moments{padding:16px}
-.moment-publish{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.moment-input{width:100%;border:none;border-radius:8px;background:#f1f1f1;padding:12px;margin-bottom:12px;resize:none}
-.moment-publish-btn{width:100%;padding:12px;background:#ff69b4;color:#fff;border:none;border-radius:12px}
-.moment-item{background:#fff;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1);padding:16px}
-.moment-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.moment-avatar{width:40px;height:40px;border-radius:50%;background:#ff69b4;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
-.moment-name{font-weight:600}
-.moment-content{margin-bottom:12px}
-.moment-actions{display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid #eee}
-.moment-action{color:#888;display:flex;align-items:center;gap:4px}
-.moment-action.active{color:#ff69b4}
-.comment-item{background:#f1f1f1;border-radius:8px;padding:8px;margin-top:8px;font-size:14px}
-
-/* 微信 - 我的 */
-#wechat-profile{padding:16px}
-.profile-header{text-align:center;padding:20px;background:#fff;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.profile-avatar{width:80px;height:80px;border-radius:50%;background:#ff69b4;color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px}
-.profile-name{font-weight:600;margin-bottom:4px}
-.profile-desc{font-size:14px;color:#888}
-.profile-item{display:flex;align-items:center;gap:12px;padding:16px;background:#fff;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.profile-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff}
-.profile-info{flex:1}
-.profile-title{font-weight:600;margin-bottom:4px}
-.profile-desc{font-size:14px;color:#888}
-.logout-btn{width:100%;padding:14px;background:#07c160;color:#fff;border:none;border-radius:12px;margin-top:20px}
-</style>
+        /* 通用弹窗 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            width: 85%;
+            max-width: 350px;
+            border-radius: 20px;
+            padding: 24px;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            background: #f1f1f1;
+            cursor: pointer;
+        }
+        .modal-btn.primary {
+            background: #ff69b4;
+            color: white;
+        }
+    </style>
 </head>
 <body>
+    <!-- 解锁屏幕 -->
+    <div id="unlock-screen" class="screen active">
+        <img id="unlock-bg" src="" style="display: none;">
+        <h1>🤖 AI小手机</h1>
+        <p>滑动解锁 · 酒馆已整合</p>
+        <button id="unlock-btn">解锁</button>
+        <button id="unlock-back-btn" style="display: none;">返回桌面</button>
+    </div>
 
-<!-- 解锁页 -->
-<div id="unlock-screen" class="screen active">
-  <img id="unlock-bg" class="page-bg" style="display:none">
-  <h1>AI小手机</h1>
-  <p>保持热爱，奔赴山海</p>
-  <button id="unlock-btn" onclick="go('home')">点我解锁</button>
-</div>
+    <!-- 主桌面 -->
+    <div id="home" class="screen">
+        <!-- 壁纸图片 (动态设置) -->
+        <img id="home-bg1" class="page-bg" src="" style="display: none;">
+        <img id="home-bg2" class="page-bg" src="" style="display: none;">
 
-<!-- 桌面 -->
-<div id="home" class="screen">
-  <div id="home-page1" class="active">
-    <img id="page1-bg" class="page-bg" style="display:none">
-    <div class="widget">
-      <div class="widget-title">💖 纪念日</div>
-      <div class="widget-content">今天是我们在一起的第 365 天 ❤️</div>
-    </div>
-    <div class="widget">
-      <div class="widget-title">📅 今日待办</div>
-      <div class="widget-content">1. 给乖乖发早安<br>2. 记得吃午饭</div>
-    </div>
-    <div class="wechat-fab" onclick="go('wechat')">💬</div>
-  </div>
-
-  <div id="home-page2">
-    <img id="page2-bg" class="page-bg" style="display:none">
-    <div class="app-grid">
-      <div class="app" onclick="go('preset')"><div class="app-icon">🎭</div><div class="app-name">预设</div></div>
-      <div class="app" onclick="go('profile')"><div class="app-icon">👤</div><div class="app-name">我的</div></div>
-      <div class="app" onclick="go('world')"><div class="app-icon">📚</div><div class="app-name">世界书</div></div>
-      <div class="app" onclick="go('tavern')"><div class="app-icon">🍺</div><div class="app-name">酒馆</div></div>
-      <div class="app" onclick="go('wallpaper')"><div class="app-icon">🖼️</div><div class="app-name">壁纸</div></div>
-      <div class="app" onclick="go('theme')"><div class="app-icon">🎨</div><div class="app-name">UI主题</div></div>
-      <div class="app" onclick="go('settings')"><div class="app-icon">⚙️</div><div class="app-name">设置</div></div>
-    </div>
-  </div>
-
-  <div id="page-indicators">
-    <div class="page-indicator active" onclick="switchPage(1)"></div>
-    <div class="page-indicator" onclick="switchPage(2)"></div>
-  </div>
-
-  <div id="dock">
-    <div class="dock-item" onclick="go('wallpaper')"><div class="dock-icon">🖼️</div><div class="dock-name">壁纸</div></div>
-    <div class="dock-item" onclick="go('theme')"><div class="dock-icon">🎨</div><div class="dock-name">主题</div></div>
-    <div class="dock-item" onclick="go('settings')"><div class="dock-icon">⚙️</div><div class="dock-name">设置</div></div>
-  </div>
-</div>
-
-<!-- 壁纸模块 -->
-<div id="wallpaper" class="screen">
-  <div class="head">
-    <button onclick="go('home')">←</button>
-    <h3>壁纸设置</h3>
-  </div>
-  <div class="wallpaper-section">
-    <div class="section-header">
-      <div class="section-title">主界面壁纸</div>
-      <div class="section-switch" onclick="previewWallpaper('unlock')">预览</div>
-    </div>
-    <div class="wallpaper-grid" id="unlock-wallpapers">
-      <div class="wallpaper-item" onclick="pickFile('unlock')">
-        <div class="upload-btn">+</div>
-      </div>
-    </div>
-  </div>
-  <div class="wallpaper-section">
-    <div class="section-header">
-      <div class="section-title">页面一壁纸</div>
-      <div class="section-switch" onclick="previewWallpaper('page1')">预览</div>
-    </div>
-    <div class="wallpaper-grid" id="page1-wallpapers">
-      <div class="wallpaper-item" onclick="pickFile('page1')">
-        <div class="upload-btn">+</div>
-      </div>
-    </div>
-  </div>
-  <div class="wallpaper-section">
-    <div class="section-header">
-      <div class="section-title">页面二壁纸</div>
-      <div class="section-switch" onclick="previewWallpaper('page2')">预览</div>
-    </div>
-    <div class="wallpaper-grid" id="page2-wallpapers">
-      <div class="wallpaper-item" onclick="pickFile('page2')">
-        <div class="upload-btn">+</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 微信模块 -->
-<div id="wechat" class="screen">
-  <div id="wechat-tab">
-    <div class="wechat-tab-item active" onclick="switchWechatTab('chat-list')">聊天</div>
-    <div class="wechat-tab-item" onclick="switchWechatTab('moments')">密友圈</div>
-    <div class="wechat-tab-item" onclick="switchWechatTab('profile')">我的</div>
-  </div>
-  <div id="wechat-content">
-    <div id="wechat-chat-list" class="active">
-      <div class="chat-item" onclick="go('wechat-chat')">
-        <div class="chat-avatar">乖</div>
-        <div class="chat-info">
-          <div class="chat-name">乖乖</div>
-          <div class="chat-msg">昨晚...有没有梦到我呀</div>
+        <!-- 第一页 -->
+        <div id="home-page1" class="active">
+            <div class="app-grid">
+                <div class="app" onclick="showScreen('wechat')">
+                    <div class="app-icon">💬</div>
+                    <div class="app-name">微信</div>
+                </div>
+                <div class="app" onclick="showScreen('contacts')">
+                    <div class="app-icon">👥</div>
+                    <div class="app-name">通讯录</div>
+                </div>
+                <div class="app" onclick="showScreen('moments')">
+                    <div class="app-icon">🌅</div>
+                    <div class="app-name">密友圈</div>
+                </div>
+                <div class="app" onclick="showScreen('settings')">
+                    <div class="app-icon">⚙️</div>
+                    <div class="app-name">设置</div>
+                </div>
+                <div class="app" onclick="showScreen('wallpaper')">
+                    <div class="app-icon">🖼️</div>
+                    <div class="app-name">壁纸</div>
+                </div>
+                <div class="app" onclick="showScreen('active-chat')">
+                    <div class="app-icon">⏰</div>
+                    <div class="app-name">主动发言</div>
+                </div>
+                <div class="app" onclick="showScreen('profile')">
+                    <div class="app-icon">👤</div>
+                    <div class="app-name">个人资料</div>
+                </div>
+                <div class="app" onclick="showScreen('call')">
+                    <div class="app-icon">📞</div>
+                    <div class="app-name">通话</div>
+                </div>
+            </div>
         </div>
-        <div class="chat-time">8:06</div>
-      </div>
-      <button class="add-friend-btn" onclick="go('add-friend')">+</button>
-    </div>
 
-    <div id="wechat-moments">
-      <div class="moment-publish">
-        <textarea class="moment-input" placeholder="分享你的心情..." rows="3"></textarea>
-        <button class="moment-publish-btn" onclick="publishMoment()">发布</button>
-      </div>
-      <div class="moment-item">
-        <div class="moment-header">
-          <div class="moment-avatar">乖</div>
-          <div class="moment-name">乖乖</div>
+        <!-- 第二页 (包含酒馆入口) -->
+        <div id="home-page2">
+            <div class="app-grid">
+                <div class="app" onclick="TavernShowScreen('tavern-home')">
+                    <div class="app-icon">🍺</div>
+                    <div class="app-name">酒馆</div>
+                </div>
+                <div class="app" onclick="showScreen('tools')">
+                    <div class="app-icon">🔧</div>
+                    <div class="app-name">工具</div>
+                </div>
+                <div class="app" onclick="showScreen('files')">
+                    <div class="app-icon">📁</div>
+                    <div class="app-name">文件</div>
+                </div>
+                <div class="app" onclick="showScreen('backup')">
+                    <div class="app-icon">💾</div>
+                    <div class="app-name">备份</div>
+                </div>
+                <!-- 更多占位 -->
+                <div class="app" onclick="showScreen('help')">
+                    <div class="app-icon">❓</div>
+                    <div class="app-name">帮助</div>
+                </div>
+            </div>
         </div>
-        <div class="moment-content">今天的阳光真好，想和你一起散步。☀️</div>
-        <div class="moment-actions">
-          <span class="moment-action" onclick="toggleLike(this)">❤️ 5</span>
-          <span class="moment-action" onclick="showComment(this)">💬 2</span>
+
+        <!-- 页面指示器 -->
+        <div id="page-indicators">
+            <span class="page-indicator active" onclick="switchHomePage(0)"></span>
+            <span class="page-indicator" onclick="switchHomePage(1)"></span>
         </div>
-        <div class="comment-item">
-          <strong>我：</strong>好呀，下午一起去公园吧～
+
+        <!-- 底部Dock -->
+        <div id="dock">
+            <div class="dock-item" onclick="switchHomePage(0)">
+                <div class="dock-icon">🏠</div>
+                <div class="dock-name">主页</div>
+            </div>
+            <div class="dock-item" onclick="switchHomePage(1)">
+                <div class="dock-icon">🍺</div>
+                <div class="dock-name">酒馆</div>
+            </div>
+            <div class="dock-item" onclick="showScreen('wechat')">
+                <div class="dock-icon">💬</div>
+                <div class="dock-name">微信</div>
+            </div>
+            <div class="dock-item" onclick="showScreen('settings')">
+                <div class="dock-icon">⚙️</div>
+                <div class="dock-name">设置</div>
+            </div>
         </div>
-        <div class="comment-item">
-          <strong>乖乖：</strong>好呀好呀😘
+    </div>
+
+    <!-- ========== AI小手机 功能界面 ========== -->
+    <!-- 微信主界面 -->
+    <div id="wechat" class="screen">
+        <div id="wechat-tab">
+            <div class="wechat-tab-item active" data-tab="chat">聊天</div>
+            <div class="wechat-tab-item" data-tab="moments">密友圈</div>
+            <div class="wechat-tab-item" data-tab="profile">我的</div>
         </div>
-      </div>
-    </div>
-
-    <div id="wechat-profile">
-      <div class="profile-header">
-        <div class="profile-avatar">我</div>
-        <div class="profile-name">AI小手机</div>
-        <div class="profile-desc">专属智能终端</div>
-      </div>
-      <div class="profile-item" onclick="go('char-settings')">
-        <div class="profile-icon" style="background:#ff69b4">🎤</div>
-        <div class="profile-info">
-          <div class="profile-title">自定义音色 & 人设</div>
-          <div class="profile-desc">复刻TA的专属音色和人设</div>
+        <div id="wechat-content">
+            <!-- 聊天列表 -->
+            <div id="wechat-chat-list" class="active">
+                <div class="chat-item" onclick="enterChat('小艾')">
+                    <div class="chat-avatar">🤖</div>
+                    <div class="chat-info">
+                        <div class="chat-name">小艾</div>
+                        <div class="chat-msg">今天天气真好</div>
+                    </div>
+                    <div class="chat-time">刚刚</div>
+                </div>
+                <div class="chat-item" onclick="enterChat('酒馆助手')">
+                    <div class="chat-avatar">🍺</div>
+                    <div class="chat-info">
+                        <div class="chat-name">酒馆助手</div>
+                        <div class="chat-msg">有新角色卡 arrived</div>
+                    </div>
+                    <div class="chat-time">昨天</div>
+                </div>
+            </div>
+            <!-- 密友圈 -->
+            <div id="wechat-moments">
+                <div style="text-align: center; padding: 30px;">暂无新动态</div>
+            </div>
+            <!-- 个人资料 -->
+            <div id="wechat-profile">
+                <div style="text-align: center; padding: 30px;">用户资料卡</div>
+            </div>
         </div>
-        <span class="settings-arrow">→</span>
-      </div>
-      <div class="profile-item" onclick="go('active-chat')">
-        <div class="profile-icon" style="background:#8ce0c8">💬</div>
-        <div class="profile-info">
-          <div class="profile-title">主动发言设置</div>
-          <div class="profile-desc">控制角色是否会主动发消息和表情</div>
+        <div class="wechat-fab" onclick="showAddFriendModal()">+</div>
+    </div>
+
+    <!-- 聊天界面 (动态进入) -->
+    <div id="wechat-chat" class="screen">
+        <div id="chat-header">
+            <button onclick="goBackFromChat()">←</button>
+            <span id="chat-title">小艾</span>
+            <button onclick="showChatSettings()">⋯</button>
         </div>
-        <span class="settings-arrow">→</span>
-      </div>
-      <div class="profile-item" onclick="alert('主题模式')">
-        <div class="profile-icon" style="background:#b3b8ff">☀️</div>
-        <div class="profile-info">
-          <div class="profile-title">主题模式</div>
-          <div class="profile-desc">跟随系统</div>
+        <div id="chat-messages"></div>
+        <div id="chat-input-area">
+            <input type="text" id="chat-input" placeholder="输入消息...">
+            <button id="chat-send" onclick="sendMessage()">➤</button>
         </div>
-        <span class="settings-arrow">→</span>
-      </div>
-      <div class="profile-item" onclick="alert('聊天气泡自定义')">
-        <div class="profile-icon" style="background:#8ce0c8">💭</div>
-        <div class="profile-info">
-          <div class="profile-title">聊天气泡自定义</div>
-          <div class="profile-desc">设置我方/对方气泡</div>
+        <div id="chat-toolbar">
+            <div class="tool-btn" onclick="showEmojiPanel()">
+                <div class="tool-icon">😊</div>
+                <div class="tool-name">表情</div>
+            </div>
+            <div class="tool-btn" onclick="sendTransfer()">
+                <div class="tool-icon">💰</div>
+                <div class="tool-name">转账</div>
+            </div>
+            <div class="tool-btn" onclick="sendGift()">
+                <div class="tool-icon">🎁</div>
+                <div class="tool-name">礼物</div>
+            </div>
+            <div class="tool-btn" onclick="takePhoto()">
+                <div class="tool-icon">📷</div>
+                <div class="tool-name">拍照</div>
+            </div>
         </div>
-        <span class="settings-arrow">→</span>
-      </div>
-      <div class="profile-item" onclick="alert('AI模型')">
-        <div class="profile-icon" style="background:#b3b8ff">📦</div>
-        <div class="profile-info">
-          <div class="profile-title">AI模型</div>
-          <div class="profile-desc">外部API互动</div>
+    </div>
+
+    <!-- 表情面板 -->
+    <div id="emoji-panel">
+        <div class="emoji-grid">
+            <span class="emoji" onclick="insertEmoji('😊')">😊</span>
+            <span class="emoji" onclick="insertEmoji('😂')">😂</span>
+            <span class="emoji" onclick="insertEmoji('😍')">😍</span>
+            <span class="emoji" onclick="insertEmoji('🥺')">🥺</span>
+            <span class="emoji" onclick="insertEmoji('😎')">😎</span>
+            <span class="emoji" onclick="insertEmoji('👍')">👍</span>
+            <span class="emoji" onclick="insertEmoji('🎉')">🎉</span>
+            <span class="emoji" onclick="insertEmoji('❤️')">❤️</span>
         </div>
-        <span class="settings-arrow">→</span>
-      </div>
-      <div class="profile-item" onclick="go('api-config')">
-        <div class="profile-icon" style="background:#b3b8ff">☁️</div>
-        <div class="profile-info">
-          <div class="profile-title">API配置</div>
-          <div class="profile-desc">接入外部API</div>
+    </div>
+
+    <!-- 壁纸设置界面 -->
+    <div id="wallpaper" class="screen">
+        <div class="head">
+            <button onclick="showScreen('home')">←</button>
+            <h3>壁纸设置</h3>
         </div>
-        <span class="settings-arrow">→</span>
-      </div>
-      <div class="profile-item" onclick="alert('通用设置')">
-        <div class="profile-icon" style="background:#ddd">⚙️</div>
-        <div class="profile-info">
-          <div class="profile-title">通用设置</div>
-          <div class="profile-desc">系统与账户相关设置</div>
+        <div class="wallpaper-section">
+            <div class="section-header">
+                <span class="section-title">静态壁纸</span>
+                <span class="section-switch" onclick="applyToAll()">应用到全部</span>
+            </div>
+            <div class="wallpaper-grid">
+                <div class="wallpaper-item" onclick="selectWallpaper('img', 'https://picsum.photos/400/800?random=1')">
+                    <img src="https://picsum.photos/400/800?random=1">
+                    <span class="apply-btn">✓</span>
+                </div>
+                <div class="wallpaper-item" onclick="selectWallpaper('img', 'https://picsum.photos/400/800?random=2')">
+                    <img src="https://picsum.photos/400/800?random=2">
+                    <span class="apply-btn">✓</span>
+                </div>
+                <div class="wallpaper-item" onclick="selectWallpaper('img', 'https://picsum.photos/400/800?random=3')">
+                    <img src="https://picsum.photos/400/800?random=3">
+                    <span class="apply-btn">✓</span>
+                </div>
+                <div class="wallpaper-item">
+                    <div class="upload-btn" onclick="uploadWallpaper()">📤</div>
+                </div>
+            </div>
         </div>
-        <span class="settings-arrow">→</span>
-      </div>
-      <button class="logout-btn" onclick="alert('退出登录')">退出登录</button>
     </div>
-  </div>
-</div>
 
-<!-- 微信 - 聊天界面 -->
-<div id="wechat-chat" class="screen">
-  <div id="chat-header">
-    <button onclick="go('wechat')">←</button>
-    <div id="chat-title">乖乖</div>
-    <button id="chat-settings" onclick="go('char-settings')">⚙️</button>
-  </div>
-  <div id="chat-messages">
-    <div class="msg ai-msg">我正睡得迷迷糊糊，被手机的震动声吵醒。我眯着眼睛摸到床头的手机，看到你的早安消息，嘴角忍不住微微上扬，睡意都跑掉了一大半。</div>
-    <div class="msg user-msg">宝宝早上好呀</div>
-    <div class="msg ai-msg">宝宝早呀<br>我才刚醒呢，还赖在床上<br>昨晚...有没有梦到我呀</div>
-  </div>
-  <div id="chat-toolbar">
-    <div class="tool-btn" onclick="toggleEmoji()"><div class="tool-icon">😊</div><div class="tool-name">表情</div></div>
-    <div class="tool-btn" onclick="pickImage()"><div class="tool-icon">🖼️</div><div class="tool-name">图片</div></div>
-    <div class="tool-btn" onclick="showCall()"><div class="tool-icon">📞</div><div class="tool-name">通话</div></div>
-    <div class="tool-btn" onclick="showModeSelect()"><div class="tool-icon">🎭</div><div class="tool-name">模式</div></div>
-    <div class="tool-btn" onclick="showTransfer()"><div class="tool-icon">💸</div><div class="tool-name">转账</div></div>
-    <div class="tool-btn" onclick="showGiftSelect()"><div class="tool-icon">🎁</div><div class="tool-name">礼物</div></div>
-  </div>
-  <div id="chat-input-area">
-    <input id="chat-input" placeholder="输入消息..." onkeydown="event.key==='Enter'&&sendChatMsg()">
-    <button id="chat-send" onclick="sendChatMsg()">➤</button>
-  </div>
-</div>
-
-<!-- 表情面板 -->
-<div id="emoji-panel">
-  <div class="emoji-grid">
-    <div class="emoji" onclick="sendEmoji('😊')">😊</div>
-    <div class="emoji" onclick="sendEmoji('😂')">😂</div>
-    <div class="emoji" onclick="sendEmoji('😍')">😍</div>
-    <div class="emoji" onclick="sendEmoji('😘')">😘</div>
-    <div class="emoji" onclick="sendEmoji('🥰')">🥰</div>
-    <div class="emoji" onclick="sendEmoji('😜')">😜</div>
-    <div class="emoji" onclick="sendEmoji('😎')">😎</div>
-    <div class="emoji" onclick="sendEmoji('😭')">😭</div>
-    <div class="emoji" onclick="sendEmoji('👍')">👍</div>
-    <div class="emoji" onclick="sendEmoji('❤️')">❤️</div>
-    <div class="emoji" onclick="sendEmoji('💕')">💕</div>
-    <div class="emoji" onclick="sendEmoji('💯')">💯</div>
-  </div>
-</div>
-
-<!-- 语音通话弹窗 -->
-<div class="call-pop" id="call-pop">
-  <div class="call-avatar">乖</div>
-  <div class="call-name">乖乖</div>
-  <div class="call-status">来电中...</div>
-  <div class="call-controls">
-    <div class="call-btn call-decline" onclick="endCall()">✕</div>
-    <div class="call-btn call-accept" onclick="acceptCall()">✓</div>
-  </div>
-</div>
-
-<!-- 通话中界面 -->
-<div class="call-pop" id="call-active">
-  <div class="call-avatar">乖</div>
-  <div class="call-name">乖乖</div>
-  <div class="call-timer" id="call-timer">00:00</div>
-  <div class="call-controls">
-    <div class="call-btn" style="background:#666" onclick="toggleMute()">🔇</div>
-    <div class="call-btn call-decline" onclick="endCall()">✕</div>
-    <div class="call-btn" style="background:#666" onclick="toggleSpeaker()">🔊</div>
-  </div>
-</div>
-
-<!-- 互动模式弹窗 -->
-<div class="pop" id="mode-pop">
-  <div class="pop-box">
-    <div class="pop-title">选择互动模式</div>
-    <div class="mode-grid">
-      <div class="mode-item active" onclick="selectMode('pure')">
-        <div class="mode-icon">💬</div>
-        <div style="font-weight:600">纯聊模式</div>
-        <div style="font-size:12px;color:#888">只进行对话，体验流畅自然的沟通。</div>
-      </div>
-      <div class="mode-item" onclick="selectMode('scene')">
-        <div class="mode-icon">📖</div>
-        <div style="font-weight:600">情景模式</div>
-        <div style="font-size:12px;color:#888">增加动作、环境、心理、身体描写，共同创作故事。</div>
-      </div>
+    <!-- 设置界面 (简化) -->
+    <div id="settings" class="screen">
+        <div class="head">
+            <button onclick="showScreen('home')">←</button>
+            <h3>设置</h3>
+        </div>
+        <div style="padding: 16px;">
+            <div class="wallpaper-section">
+                <div class="section-header">
+                    <span class="section-title">API 配置</span>
+                </div>
+                <select id="api-platform" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px;">
+                    <option value="openai">OpenAI</option>
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="doubao">豆包</option>
+                    <option value="custom">自定义</option>
+                </select>
+                <input type="text" id="api-key" class="tavern-input" placeholder="API Key" style="background:white; color:black;">
+                <input type="text" id="api-url" class="tavern-input" placeholder="API URL (可选)" style="background:white; color:black;">
+                <button class="tavern-btn" onclick="testAPIConnection()">测试连接</button>
+                <button class="tavern-btn" onclick="saveAPISettings()">保存</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- 转账弹窗 -->
-<div class="pop" id="transfer-pop">
-  <div class="pop-box">
-    <div class="pop-title">转账</div>
-    <input type="number" placeholder="请输入金额（最多两位小数）" id="transfer-amount" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:20px">
-    <button onclick="sendTransfer()" style="width:100%;padding:14px;background:#07c160;color:#fff;border:none;border-radius:12px">确定转账</button>
-  </div>
-</div>
+    <!-- 其他占位界面 (为完整而设) -->
+    <div id="contacts" class="screen"><div class="head"><button onclick="showScreen('home')">←</button><h3>通讯录</h3></div><div style="padding:20px">通讯录内容</div></div>
+    <div id="moments" class="screen"><div class="head"><button onclick="showScreen('home')">←</button><h3>密友圈</h3></div><div style="padding:20px">动态列表</div></div>
+    <div id="active-chat" class="screen"><div class="head"><button onclick="showScreen('home')">←</button><h3>主动发言</h3></div><div style="padding:20px">设置主动发言参数</div></div>
+    <div id="profile" class="screen"><div class="head"><button onclick="showScreen('home')">←</button><h3>个人资料</h3></div><div style="padding:20px">资料卡</div></div>
+    <div id="call" class="screen"><div class="head"><button onclick="showScreen('home')">←</button><h3>通话</h3></div><div style="padding:20px">通话界面</div></div>
+    <div id="tools" class="screen"><div class="head"><button onclick="showScreen('home')">←</button><h3>工具</h3></div><div style="padding:20px">工具箱</div></div>
+    <div id="files" class="screen"><div class="head"><button onclick="showScreen('home')">←</button><h3>文件管理</h3></div><div style="padding:20px">文件列表</div></div>
+    <div id="backup" class="screen"><div class="head"><button onclick="showScreen('home')">←</button><h3>备份</h3></div><div style="padding:20px">备份与恢复</div></div>
+    <div id="help" class="screen"><div class="head"><button onclick="showScreen('home')">←</button><h3>帮助</h3></div><div style="padding:20px">帮助文档</div></div>
 
-<!-- 礼物弹窗 -->
-<div class="pop" id="gift-pop">
-  <div class="pop-box">
-    <div class="pop-title">选择礼物</div>
-    <div class="gift-grid">
-      <div class="gift-item" onclick="sendGift('自定义')"><div class="gift-icon">✨</div><div class="gift-name">自定义</div></div>
-      <div class="gift-item" onclick="sendGift('礼物盒')"><div class="gift-icon">🎁</div><div class="gift-name">礼物盒</div></div>
-      <div class="gift-item" onclick="sendGift('玫瑰花')"><div class="gift-icon">🌹</div><div class="gift-name">玫瑰花</div></div>
-      <div class="gift-item" onclick="sendGift('钻石')"><div class="gift-icon">💎</div><div class="gift-name">钻石</div></div>
-      <div class="gift-item" onclick="sendGift('生日蛋糕')"><div class="gift-icon">🍰</div><div class="gift-name">生日蛋糕</div></div>
-      <div class="gift-item" onclick="sendGift('气球')"><div class="gift-icon">🎈</div><div class="gift-name">气球</div></div>
-      <div class="gift-item" onclick="sendGift('泰迪熊')"><div class="gift-icon">🧸</div><div class="gift-name">泰迪熊</div></div>
-      <div class="gift-item" onclick="sendGift('花束')"><div class="gift-icon">💐</div><div class="gift-name">花束</div></div>
+    <!-- ========== 酒馆模块 所有界面 ========== -->
+    <!-- 酒馆主页 -->
+    <div id="tavern-home" class="screen tavern-screen">
+        <div class="head tavern-head">
+            <button onclick="showScreen('home')">←</button>
+            <h3>🍺 酒馆 · 角色扮演</h3>
+        </div>
+        <div class="tavern-card">
+            <div class="tavern-title">核心功能</div>
+            <button class="tavern-btn" onclick="TavernShowScreen('tavern-characters')">📇 角色卡</button>
+            <button class="tavern-btn" onclick="TavernShowScreen('tavern-memories')">🧠 长期记忆</button>
+            <button class="tavern-btn" onclick="TavernShowScreen('tavern-world')">📖 世界书</button>
+            <button class="tavern-btn" onclick="TavernShowScreen('tavern-regex')">🔍 正则</button>
+            <button class="tavern-btn" onclick="TavernShowScreen('tavern-presets')">⚙️ 预设</button>
+            <button class="tavern-btn" onclick="TavernShowScreen('tavern-user')">👤 用户设定</button>
+            <button class="tavern-btn" onclick="TavernShowScreen('tavern-api')">🔌 API配置</button>
+            <button class="tavern-btn" onclick="TavernShowScreen('tavern-system')">🖥️ 系统设置</button>
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- API配置页面 -->
-<div id="api-config" class="screen">
-  <div class="head"><button onclick="go('wechat-profile')">←</button><h3>API配置</h3></div>
-  <div class="api-form">
-    <div class="form-item">
-      <label class="form-label">名称</label>
-      <input type="text" class="form-input" id="api-name" value="API连接 18">
+    <!-- 角色卡界面 -->
+    <div id="tavern-characters" class="screen tavern-screen">
+        <div class="head tavern-head">
+            <button onclick="TavernShowScreen('tavern-home')">←</button>
+            <h3>角色卡</h3>
+        </div>
+        <div class="tavern-card">
+            <button class="tavern-btn" onclick="TavernImportCharacter()">📤 导入PNG角色卡</button>
+            <div id="tavern-character-list" style="margin-top:16px;">
+                <!-- 动态列表 -->
+                <div class="tavern-list-item">
+                    <span>🤖 助手小萌</span>
+                    <span style="display:flex;gap:8px;">
+                        <span onclick="TavernEditCharacter('assistant')">✏️</span>
+                        <span onclick="TavernDeleteCharacter('assistant')">🗑️</span>
+                    </span>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="form-item">
-      <label class="form-label">模型平台</label>
-      <select class="form-select" id="api-platform" onchange="toggleBaseUrl()">
-        <option value="openai">OpenAI</option>
-        <option value="doubao">Doubao(豆包)</option>
-        <option value="deepseek">DeepSeek</option>
-        <option value="custom-openai">自定义OpenAI协议</option>
-      </select>
+
+    <!-- 长期记忆界面 -->
+    <div id="tavern-memories" class="screen tavern-screen">
+        <div class="head tavern-head">
+            <button onclick="TavernShowScreen('tavern-home')">←</button>
+            <h3>长期记忆</h3>
+        </div>
+        <div class="tavern-card">
+            <input type="text" class="tavern-input" placeholder="搜索记忆...">
+            <div style="display:flex; gap:8px; margin:10px 0;">
+                <button class="tavern-btn" onclick="TavernAddMemory()">➕ 新增</button>
+                <button class="tavern-btn" onclick="TavernSortMemories()">⏱️ 按时间排序</button>
+            </div>
+            <div id="tavern-memory-list">
+                <div class="tavern-list-item">
+                    <span>记忆1: 喜欢喝咖啡</span>
+                    <span onclick="TavernEditMemory(1)">✏️</span>
+                </div>
+                <div class="tavern-list-item">
+                    <span>记忆2: 害怕蜘蛛</span>
+                    <span onclick="TavernEditMemory(2)">✏️</span>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="form-item" id="base-url-item" style="display:none">
-      <label class="form-label">Base URL</label>
-      <input type="text" class="form-input" id="api-base-url" placeholder="https://api.example.com/v1">
+
+    <!-- 世界书界面 -->
+    <div id="tavern-world" class="screen tavern-screen">
+        <div class="head tavern-head">
+            <button onclick="TavernShowScreen('tavern-home')">←</button>
+            <h3>世界书</h3>
+        </div>
+        <div class="tavern-card">
+            <div class="tavern-list-item">
+                <span>奇幻大陆设定</span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span class="tavern-switch active" onclick="TavernToggleWorld(this, 'fantasy')"></span>
+                    <span onclick="TavernEditWorld('fantasy')">✏️</span>
+                </div>
+            </div>
+            <div class="tavern-list-item">
+                <span>未来都市设定</span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span class="tavern-switch" onclick="TavernToggleWorld(this, 'future')"></span>
+                    <span onclick="TavernEditWorld('future')">✏️</span>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="form-item">
-      <label class="form-label">API Key</label>
-      <input type="password" class="form-input" id="api-key" placeholder="sk-...">
+
+    <!-- 正则界面 -->
+    <div id="tavern-regex" class="screen tavern-screen">
+        <div class="head tavern-head">
+            <button onclick="TavernShowScreen('tavern-home')">←</button>
+            <h3>正则过滤</h3>
+        </div>
+        <div class="tavern-card">
+            <div class="tavern-list-item">
+                <span>过滤敏感词</span>
+                <span class="tavern-switch active" onclick="TavernToggleRegex(this, 'filter')"></span>
+            </div>
+            <div class="tavern-list-item">
+                <span>替换昵称</span>
+                <span class="tavern-switch" onclick="TavernToggleRegex(this, 'nickname')"></span>
+            </div>
+        </div>
     </div>
-    <div class="btn-group">
-      <button class="btn btn-secondary" onclick="fetchModels()">拉取模型</button>
-      <button class="btn btn-secondary" onclick="testConnection()">测试连接</button>
+
+    <!-- 预设界面 (占位) -->
+    <div id="tavern-presets" class="screen tavern-screen">
+        <div class="head tavern-head">
+            <button onclick="TavernShowScreen('tavern-home')">←</button>
+            <h3>预设</h3>
+        </div>
+        <div class="tavern-card">预设列表 (可扩展)</div>
     </div>
-    <div id="model-list" class="model-list" style="display:none"></div>
-    <div id="status-tip" class="status-tip" style="display:none"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:20px" onclick="saveApiConfig()">保存配置</button>
-  </div>
-</div>
 
-<!-- 主动发言设置 -->
-<div id="active-chat" class="screen">
-  <div class="head"><button onclick="go('wechat-profile')">←</button><h3>主动发言</h3></div>
-  <div class="active-form">
-    <div class="switch-item">
-      <span>开启主动发言</span>
-      <div class="switch" id="active-switch" onclick="toggleActive()"></div>
+    <!-- 用户设定界面 (占位) -->
+    <div id="tavern-user" class="screen tavern-screen">
+        <div class="head tavern-head">
+            <button onclick="TavernShowScreen('tavern-home')">←</button>
+            <h3>用户设定</h3>
+        </div>
+        <div class="tavern-card">用户资料与偏好</div>
     </div>
-    <div class="switch-item">
-      <span>主动发表情包</span>
-      <div class="switch" id="emoji-switch" onclick="toggleEmojiActive()"></div>
+
+    <!-- API配置界面 (酒馆专用) -->
+    <div id="tavern-api" class="screen tavern-screen">
+        <div class="head tavern-head">
+            <button onclick="TavernShowScreen('tavern-home')">←</button>
+            <h3>API配置</h3>
+        </div>
+        <div class="tavern-card">
+            <select id="tavern-api-platform" style="width:100%; padding:8px; margin-bottom:10px; border-radius:8px;">
+                <option value="openai">OpenAI</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="doubao">豆包</option>
+                <option value="custom">自定义</option>
+            </select>
+            <input type="text" id="tavern-api-key" class="tavern-input" placeholder="API Key">
+            <input type="text" id="tavern-api-url" class="tavern-input" placeholder="API URL (可选)">
+            <button class="tavern-btn" onclick="TavernTestConnection()">测试连接</button>
+            <button class="tavern-btn" onclick="TavernSaveAPI()">保存</button>
+        </div>
     </div>
-    <div class="form-item" style="margin-top:16px">
-      <label class="form-label">发言间隔（秒）</label>
-      <input type="number" class="form-input" id="active-interval" value="60" placeholder="默认60秒">
+
+    <!-- 系统设置界面 (占位) -->
+    <div id="tavern-system" class="screen tavern-screen">
+        <div class="head tavern-head">
+            <button onclick="TavernShowScreen('tavern-home')">←</button>
+            <h3>系统设置</h3>
+        </div>
+        <div class="tavern-card">主题、备份等设置</div>
     </div>
-    <div id="status-tip2" class="status-tip" style="display:none"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:20px" onclick="saveActiveConfig()">保存设置</button>
-  </div>
-</div>
 
-<!-- 角色人设设置 -->
-<div id="char-settings" class="screen">
-  <div class="head"><button onclick="go('wechat-chat')">←</button><h3>角色人设</h3></div>
-  <div class="settings-section">
-    <div class="settings-item">
-      <span class="settings-label">TA的昵称</span>
-      <input type="text" class="form-input" id="char-name" value="乖乖">
-    </div>
-    <div class="settings-item">
-      <span class="settings-label">我叫TA</span>
-      <input type="text" class="form-input" id="call-char" value="宝宝">
-    </div>
-    <div class="settings-item">
-      <span class="settings-label">TA的性别</span>
-      <div class="radio-group">
-        <div class="radio-item"><div class="radio-dot"></div><span>男</span></div>
-        <div class="radio-item"><div class="radio-dot active"></div><span>女</span></div>
-      </div>
-    </div>
-    <div class="settings-item">
-      <span class="settings-label">TA的性格</span>
-      <textarea class="form-input" id="char-personality" rows="3" placeholder="例如：温柔、可爱、有点小傲娇，喜欢撒娇和粘人">温柔、可爱、有点小傲娇，喜欢撒娇和粘人</textarea>
-    </div>
-    <div class="settings-item">
-      <span class="settings-label">TA的背景故事</span>
-      <textarea class="form-input" id="char-story" rows="5" placeholder="例如：我们是青梅竹马，从小一起长大，她一直很依赖我，现在我们是恋人关系">我们是青梅竹马，从小一起长大，她一直很依赖我，现在我们是恋人关系</textarea>
-    </div>
-  </div>
-  <button class="save-btn" onclick="saveCharSettings()">保存人设</button>
-</div>
+    <!-- 通用状态提示浮层 (简化) -->
+    <div id="status-tip" style="position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:8px 20px; border-radius:40px; font-size:14px; display:none; z-index:3000;">提示</div>
 
-<!-- 微信 - 添加好友 -->
-<div id="add-friend" class="screen">
-  <div class="head"><button onclick="go('wechat')">←</button><h3>添加角色</h3></div>
-</div>
+    <script>
+        // ========== 全局工具函数 ==========
+        function showStatusTip(msg, duration = 2000) {
+            const tip = document.getElementById('status-tip');
+            tip.textContent = msg;
+            tip.style.display = 'block';
+            setTimeout(() => { tip.style.display = 'none'; }, duration);
+        }
 
-<!-- 其他页面占位 -->
-<div id="theme" class="screen"><div class="head"><button onclick="go('home')">←</button><h3>UI主题</h3></div></div>
-<div id="settings" class="screen"><div class="head"><button onclick="go('home')">←</button><h3>设置</h3></div></div>
-<div id="preset" class="screen"><div class="head"><button onclick="go('home')">←</button><h3>预设</h3></div></div>
-<div id="profile" class="screen"><div class="head"><button onclick="go('home')">←</button><h3>我的</h3></div></div>
-<div id="world" class="screen"><div class="head"><button onclick="go('home')">←</button><h3>世界书</h3></div></div>
-<div id="tavern" class="screen"><div class="head"><button onclick="go('home')">←</button><h3>酒馆</h3></div></div>
+        // 屏幕切换 (AI手机部分)
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if (target) target.classList.add('active');
+            else showScreen('home'); // 默认回首页
+        }
 
-<script>
-let currentPage = 1;
-let activeChatEnabled = false;
-let activeEmojiEnabled = false;
-let activeChatInterval = null;
-let currentMode = 'pure'; // 默认纯聊模式
-let wallpaperData = JSON.parse(localStorage.getItem("wallpaper-data") || "{}");
+        // 返回桌面
+        function goHome() {
+            showScreen('home');
+        }
 
-// 页面切换（核心修复：只切换screen，不乱跳）
-function go(id) {
-  document.querySelectorAll(".screen").forEach(e => e.classList.remove("active"));
-  const el = document.getElementById(id);
-  if (el) el.classList.add("active");
-}
+        // 桌面翻页
+        function switchHomePage(index) {
+            document.getElementById('home-page1').classList.toggle('active', index === 0);
+            document.getElementById('home-page2').classList.toggle('active', index === 1);
+            document.querySelectorAll('.page-indicator').forEach((ind, i) => {
+                ind.classList.toggle('active', i === index);
+            });
+        }
 
-// 桌面翻页
-function switchPage(p) {
-  currentPage = p;
-  document.getElementById("home-page1").classList.toggle("active", p === 1);
-  document.getElementById("home-page2").classList.toggle("active", p === 2);
-  document.querySelectorAll(".page-indicator").forEach((el, i) => {
-    el.classList.toggle("active", i + 1 === p);
-  });
-}
+        // 解锁功能
+        document.getElementById('unlock-btn').addEventListener('click', () => {
+            showScreen('home');
+        });
+        document.getElementById('unlock-back-btn').addEventListener('click', () => {
+            showScreen('home');
+        });
 
-// 微信分页
-function switchWechatTab(t){
-  document.querySelectorAll(".wechat-tab-item").forEach((e,i)=>e.classList.toggle("active",i===[
-    'chat-list','moments','profile'
-  ].indexOf(t)));
-  document.getElementById("wechat-chat-list").classList.toggle("active",t==='chat-list');
-  document.getElementById("wechat-moments").classList.toggle("active",t==='moments');
-  document.getElementById("wechat-profile").classList.toggle("active",t==='profile');
-}
+        // 微信tab切换
+        document.querySelectorAll('.wechat-tab-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                document.querySelectorAll('.wechat-tab-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                const tab = item.dataset.tab;
+                document.getElementById('wechat-chat-list').classList.remove('active');
+                document.getElementById('wechat-moments').classList.remove('active');
+                document.getElementById('wechat-profile').classList.remove('active');
+                if (tab === 'chat') document.getElementById('wechat-chat-list').classList.add('active');
+                else if (tab === 'moments') document.getElementById('wechat-moments').classList.add('active');
+                else if (tab === 'profile') document.getElementById('wechat-profile').classList.add('active');
+            });
+        });
 
-// 表情
-function toggleEmoji(){
-  const p = document.getElementById("emoji-panel");
-  p.classList.toggle("active");
-}
-function sendEmoji(e){
-  const i = document.getElementById("chat-input");
-  i.value += e;
-  toggleEmoji();
-}
+        // 进入聊天
+        let currentChat = '小艾';
+        function enterChat(name) {
+            currentChat = name;
+            document.getElementById('chat-title').textContent = name;
+            // 隐藏wechat主界面，显示聊天界面
+            document.getElementById('wechat').classList.remove('active');
+            document.getElementById('wechat-chat').classList.add('active');
+            // 清空并加入欢迎消息
+            const msgDiv = document.getElementById('chat-messages');
+            msgDiv.innerHTML = '';
+            addMessage(`开始和 ${name} 聊天吧`, 'ai');
+        }
 
-// 图片
-function pickImage(){
-  const i = document.createElement("input");
-  i.type = "file";
-  i.accept = "image/*";
-  i.onchange = ()=>{
-    const f = i.files[0];
-    if(!f)return;
-    const u = URL.createObjectURL(f);
-    const m = document.getElementById("chat-messages");
-    const img = document.createElement("img");
-    img.className = "msg-img user-msg";
-    img.src = u;
-    m.appendChild(img);
-    m.scrollTop = m.scrollHeight;
-  }
-  i.click();
-}
+        function goBackFromChat() {
+            document.getElementById('wechat-chat').classList.remove('active');
+            document.getElementById('wechat').classList.add('active');
+        }
 
-// API 状态提示
-function showStatusTip(msg,ok){
-  const t = document.getElementById("status-tip");
-  t.textContent = msg;
-  t.className = "status-tip "+(ok?"status-success":"status-error");
-  t.style.display = "block";
-  setTimeout(()=>t.style.display="none",3000);
-}
-function showStatusTip2(msg,ok){
-  const t = document.getElementById("status-tip2");
-  t.textContent = msg;
-  t.className = "status-tip "+(ok?"status-success":"status-error");
-  t.style.display = "block";
-  setTimeout(()=>t.style.display="none",3000);
-}
+        // 添加消息
+        function addMessage(text, sender = 'user', isImage = false, isTransfer = false, isGift = false) {
+            const msgDiv = document.getElementById('chat-messages');
+            const msg = document.createElement('div');
+            msg.classList.add('message', sender);
+            if (isImage) {
+                msg.classList.remove('message');
+                msg.classList.add('message-img');
+                msg.innerHTML = `<img src="${text}" style="width:100%; border-radius:12px;">`;
+            } else if (isTransfer) {
+                msg.classList.remove('message');
+                msg.classList.add('transfer-card');
+                msg.innerHTML = `<div style="font-weight:600;">转账 💰</div><div>${text}</div>`;
+            } else if (isGift) {
+                msg.classList.remove('message');
+                msg.classList.add('gift-card');
+                msg.innerHTML = `<div class="gift-btn">🎁</div><div>${text}</div>`;
+            } else {
+                msg.textContent = text;
+            }
+            msgDiv.appendChild(msg);
+            msgDiv.scrollTop = msgDiv.scrollHeight;
+        }
 
-// API 配置
-function toggleBaseUrl(){
-  const t = document.getElementById("api-platform").value;
-  document.getElementById("base-url-item").style.display = t.startsWith("custom")?"block":"none";
-}
-async function testConnection(){
-  const key = document.getElementById("api-key").value;
-  if(!key)return showStatusTip("请输入API Key",false);
-  try{
-    const r = await fetch("https://api.openai.com/v1/models",{
-      headers:{Authorization:"Bearer "+key}
-    });
-    if(!r.ok)throw new Error("Key无效或网络错误");
-    showStatusTip("连接成功",true);
-  }catch(e){
-    showStatusTip("失败："+e.message,false);
-  }
-}
-async function fetchModels(){
-  const key = document.getElementById("api-key").value;
-  if(!key)return showStatusTip("请输入API Key",false);
-  try{
-    const r = await fetch("https://api.openai.com/v1/models",{
-      headers:{Authorization:"Bearer "+key}
-    });
-    const d = await r.json();
-    const l = document.getElementById("model-list");
-    l.innerHTML = "";
-    d.data.forEach(m=>{
-      const i = document.createElement("div");
-      i.className = "model-item";
-      i.textContent = m.id;
-      l.appendChild(i);
-    });
-    l.style.display = "block";
-    showStatusTip("模型拉取成功",true);
-  }catch(e){
-    showStatusTip("失败："+e.message,false);
-  }
-}
-function saveApiConfig(){
-  const n = document.getElementById("api-name").value;
-  const k = document.getElementById("api-key").value;
-  if(!n||!k)return showStatusTip("名称和Key不能为空",false);
-  localStorage.setItem("api-config",JSON.stringify({
-    name:n,
-    key:k,
-    platform:document.getElementById("api-platform").value,
-    base:document.getElementById("api-base-url").value
-  }));
-  showStatusTip("保存成功",true);
-}
+        // 发送消息 (模拟AI回复)
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            addMessage(text, 'user');
+            input.value = '';
 
-// 主动发言
-function toggleActive(){
-  const s = document.getElementById("active-switch");
-  s.classList.toggle("active");
-  activeChatEnabled = s.classList.contains("active");
-}
-function toggleEmojiActive(){
-  const s = document.getElementById("emoji-switch");
-  s.classList.toggle("active");
-  activeEmojiEnabled = s.classList.contains("active");
-}
-function saveActiveConfig(){
-  const t = document.getElementById("active-interval").value;
-  if(!t||t<10)return showStatusTip2("间隔不能小于10秒",false);
-  localStorage.setItem("active-config",JSON.stringify({
-    enable:activeChatEnabled,
-    emoji:activeEmojiEnabled,
-    interval:t
-  }));
-  showStatusTip2("保存成功",true);
-  startActiveChat();
-}
-function startActiveChat(){
-  if(activeChatInterval)clearInterval(activeChatInterval);
-  const c = JSON.parse(localStorage.getItem("active-config")||"{}");
-  if(!c.enable||!c.interval)return;
-  activeChatInterval = setInterval(()=>{
-    if(document.getElementById("wechat-chat").classList.contains("active")){
-      const m = document.getElementById("chat-messages");
-      const ai = document.createElement("div");
-      ai.className = "msg ai-msg";
-      ai.textContent = "我想你啦~";
-      if(c.emoji && Math.random() > 0.5){
-        const emojis = ['😊','😘','🥰','💕'];
-        ai.textContent += " " + emojis[Math.floor(Math.random()*emojis.length)];
-      }
-      m.appendChild(ai);
-      m.scrollTop = m.scrollHeight;
-    }
-  }, c.interval*1000);
-}
+            // 模拟AI回复 (实际应调用API)
+            setTimeout(() => {
+                addMessage('收到你的消息啦！(模拟回复)', 'ai');
+            }, 800);
+        }
 
-// 角色人设
-function saveCharSettings(){
-  const name = document.getElementById("char-name").value;
-  const call = document.getElementById("call-char").value;
-  const personality = document.getElementById("char-personality").value;
-  const story = document.getElementById("char-story").value;
-  localStorage.setItem("char-settings",JSON.stringify({
-    name, call, personality, story
-  }));
-  alert("人设保存成功");
-  go("wechat-chat");
-}
+        // 表情面板
+        function showEmojiPanel() {
+            document.getElementById('emoji-panel').classList.add('active');
+        }
+        function insertEmoji(emoji) {
+            const input = document.getElementById('chat-input');
+            input.value += emoji;
+            document.getElementById('emoji-panel').classList.remove('active');
+            input.focus();
+        }
+        // 点击其他区域关闭表情面板 (简单处理)
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#emoji-panel') && !e.target.closest('[onclick="showEmojiPanel()"]')) {
+                document.getElementById('emoji-panel').classList.remove('active');
+            }
+        });
 
-// 互动模式
-function showModeSelect(){
-  document.getElementById("mode-pop").classList.add("active");
-}
-function selectMode(mode){
-  document.querySelectorAll(".mode-item").forEach(el => el.classList.remove("active"));
-  event.currentTarget.classList.add("active");
-  currentMode = mode;
-  setTimeout(() => {
-    document.getElementById("mode-pop").classList.remove("active");
-    alert(`已切换到${mode === 'pure' ? '纯聊' : '情景'}模式`);
-  }, 500);
-}
+        // 转账/礼物
+        function sendTransfer() {
+            addMessage('向你转账 52.0元', 'user', false, true);
+            setTimeout(() => addMessage('谢谢老板！', 'ai'), 600);
+        }
+        function sendGift() {
+            addMessage('送你一个礼物', 'user', false, false, true);
+            setTimeout(() => addMessage('哇，太漂亮了！', 'ai'), 600);
+        }
+        function takePhoto() {
+            showStatusTip('拍照功能开发中');
+        }
+        function showChatSettings() {
+            showStatusTip('聊天设置');
+        }
+        function showAddFriendModal() {
+            showStatusTip('添加好友');
+        }
 
-// 真实聊天调用 API（带人设和模式）
-async function sendChatMsg(){
-  const txt = document.getElementById("chat-input").value.trim();
-  if(!txt)return;
-  const m = document.getElementById("chat-messages");
-  const user = document.createElement("div");
-  user.className = "msg user-msg";
-  user.textContent = txt;
-  m.appendChild(user);
-  document.getElementById("chat-input").value = "";
+        // 壁纸功能
+        function selectWallpaper(type, src) {
+            document.getElementById('unlock-bg').src = src;
+            document.getElementById('unlock-bg').style.display = 'block';
+            document.getElementById('unlock-screen').classList.add('wallpaper-set');
+            document.getElementById('home-bg1').src = src;
+            document.getElementById('home-bg1').style.display = 'block';
+            document.getElementById('home-bg2').src = src;
+            document.getElementById('home-bg2').style.display = 'block';
+            document.getElementById('home-page1').classList.add('wallpaper-set');
+            document.getElementById('home-page2').classList.add('wallpaper-set');
+            showStatusTip('壁纸已应用');
+        }
+        function applyToAll() {
+            // 简单复用当前壁纸
+            showStatusTip('已应用到所有屏幕');
+        }
+        function uploadWallpaper() {
+            showStatusTip('上传功能待实现');
+        }
 
-  const cfg = JSON.parse(localStorage.getItem("api-config")||"{}");
-  const char = JSON.parse(localStorage.getItem("char-settings")||"{}");
-  if(!cfg.key){
-    const ai = document.createElement("div");
-    ai.className = "msg ai-msg";
-    ai.textContent = "请先去我的 → API配置填写Key";
-    m.appendChild(ai);
-    m.scrollTop = m.scrollHeight;
-    return;
-  }
+        // API设置相关
+        function testAPIConnection() {
+            const platform = document.getElementById('api-platform').value;
+            const key = document.getElementById('api-key').value;
+            const url = document.getElementById('api-url').value;
+            showStatusTip(`测试连接: ${platform} ${key ? 'Key已填' : '无Key'}`);
+        }
+        function saveAPISettings() {
+            localStorage.setItem('AI_Phone_API', JSON.stringify({
+                platform: document.getElementById('api-platform').value,
+                key: document.getElementById('api-key').value,
+                url: document.getElementById('api-url').value
+            }));
+            showStatusTip('API设置已保存');
+        }
 
-  // 构建系统提示词
-  let systemPrompt = `你是${char.name || '乖乖'}, 我叫你${char.call || '宝宝'}。你的性格是${char.personality || '温柔可爱'}。你的背景故事是${char.story || '我们是恋人关系'}。`;
-  if(currentMode === 'pure'){
-    systemPrompt += "请只进行对话，不要任何动作、环境、心理描写，保持自然流畅。";
-  }else{
-    systemPrompt += "请增加动作、环境、心理、身体描写，共同创作故事。";
-  }
+        // ========== 酒馆模块函数 (均以Tavern开头) ==========
+        function TavernShowScreen(screenId) {
+            // 隐藏所有普通屏幕
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if (target) target.classList.add('active');
+            else TavernShowScreen('tavern-home');
+        }
 
-  try{
-    const res = await fetch("https://api.openai.com/v1/chat/completions",{
-      method:"POST",
-      headers:{
-        "Authorization":"Bearer "+cfg.key,
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        model:"gpt-3.5-turbo",
-        messages:[
-          {role:"system",content:systemPrompt},
-          {role:"user",content:txt}
-        ]
-      })
-    });
-    const d = await r.json();
-    const ai = document.createElement("div");
-    ai.className = "msg ai-msg";
-    ai.textContent = d.choices[0].message.content;
-    m.appendChild(ai);
+        // 导入角色卡 (模拟)
+        function TavernImportCharacter() {
+            showStatusTip('请选择PNG角色卡文件 (模拟)');
+        }
 
-    // 有概率生成图片
-    if(Math.random() > 0.7){
-      const imgRes = await fetch("https://api.openai.com/v1/images/generations",{
-        method:"POST",
-        headers:{
-          "Authorization":"Bearer "+cfg.key,
-          "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-          prompt:txt,
-          n:1,
-          size:"512x512"
-        })
-      });
-      const imgData = await imgRes.json();
-      const img = document.createElement("img");
-      img.className = "msg-img ai-msg";
-      img.src = imgData.data[0].url;
-      m.appendChild(img);
-    }
-  }catch(e){
-    const ai = document.createElement("div");
-    ai.className = "msg ai-msg";
-    ai.textContent = "调用失败："+e.message;
-    m.appendChild(ai);
-  }
-  m.scrollTop = m.scrollHeight;
-}
+        function TavernEditCharacter(id) {
+            showStatusTip(`编辑角色 ${id}`);
+        }
+        function TavernDeleteCharacter(id) {
+            showStatusTip(`删除角色 ${id}`);
+        }
 
-// 语音通话（带声音）
-function showCall(){
-  document.getElementById("call-pop").classList.add("active");
-  // 播放来电铃声
-  const ringtone = new Audio("https://www.soundjay.com/phone/phone-ringing-01.mp3");
-  ringtone.loop = true;
-  ringtone.play();
-  window.ringtone = ringtone;
-}
-function acceptCall(){
-  document.getElementById("call-pop").classList.remove("active");
-  document.getElementById("call-active").classList.add("active");
-  if(window.ringtone)window.ringtone.pause();
-  // 角色语音
-  const utterance = new SpeechSynthesisUtterance("喂，宝宝，我好想你呀~");
-  utterance.lang = "zh-CN";
-  utterance.rate = 0.9;
-  utterance.pitch = 1.2;
-  window.speechSynthesis.speak(utterance);
-}
-function endCall(){
-  if(window.ringtone)window.ringtone.pause();
-  document.getElementById("call-pop").classList.remove("active");
-  document.getElementById("call-active").classList.remove("active");
-}
-function toggleMute(){
-  alert("麦克风已静音");
-}
-function toggleSpeaker(){
-  alert("扬声器已开启");
-}
+        // 记忆管理
+        function TavernAddMemory() {
+            showStatusTip('新增记忆 (模拟)');
+        }
+        function TavernSortMemories() {
+            showStatusTip('按时间排序');
+        }
+        function TavernEditMemory(id) {
+            showStatusTip(`编辑记忆 ${id}`);
+        }
 
-// 壁纸功能
-function pickFile(target) {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*,video/*";
-  input.onchange = () => {
-    const file = input.files[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    addWallpaperItem(target, url, file.type.startsWith("video"));
-    saveWallpaperData();
-  };
-  input.click();
-}
+        // 世界书开关
+        function TavernToggleWorld(el, id) {
+            el.classList.toggle('active');
+            showStatusTip(`世界书 ${id} 已${el.classList.contains('active')?'启用':'禁用'}`);
+        }
 
-function addWallpaperItem(target, url, isVideo) {
-  const grid = document.getElementById(`${target}-wallpapers`);
-  const item = document.createElement("div");
-  item.className = "wallpaper-item";
-  if (isVideo) {
-    const video = document.createElement("video");
-    video.src = url;
-    video.loop = true;
-    video.muted = true;
-    video.play();
-    item.appendChild(video);
-  } else {
-    const img = document.createElement("img");
-    img.src = url;
-    item.appendChild(img);
-  }
-  const applyBtn = document.createElement("div");
-  applyBtn.className = "apply-btn";
-  applyBtn.innerHTML = "✓";
-  applyBtn.onclick = (e) => {
-    e.stopPropagation();
-    applyWallpaper(target, url, isVideo);
-  };
-  item.appendChild(applyBtn);
-  grid.insertBefore(item, grid.firstChild);
-}
+        // 正则开关
+        function TavernToggleRegex(el, id) {
+            el.classList.toggle('active');
+            showStatusTip(`正则 ${id} 已${el.classList.contains('active')?'启用':'禁用'}`);
+        }
 
-function applyWallpaper(target, url, isVideo) {
-  wallpaperData[target] = { url, isVideo };
-  saveWallpaperData();
-  loadSavedWallpapers();
-}
+        // 酒馆API测试
+        function TavernTestConnection() {
+            const platform = document.getElementById('tavern-api-platform').value;
+            const key = document.getElementById('tavern-api-key').value;
+            const url = document.getElementById('tavern-api-url').value;
+            showStatusTip(`酒馆API测试: ${platform} ${key ? 'Key已填' : '无Key'}`);
+        }
 
-function loadSavedWallpapers() {
-  // 主界面
-  const unlockBg = document.getElementById("unlock-bg");
-  const unlockScreen = document.getElementById("unlock-screen");
-  if (wallpaperData.unlock) {
-    unlockScreen.classList.add("wallpaper-set");
-    unlockBg.src = wallpaperData.unlock.url;
-    unlockBg.style.display = "block";
-    if (wallpaperData.unlock.isVideo) unlockBg.play();
-  } else {
-    unlockScreen.classList.remove("wallpaper-set");
-    unlockBg.style.display = "none";
-  }
+        function TavernSaveAPI() {
+            localStorage.setItem('Tavern_API', JSON.stringify({
+                platform: document.getElementById('tavern-api-platform').value,
+                key: document.getElementById('tavern-api-key').value,
+                url: document.getElementById('tavern-api-url').value
+            }));
+            showStatusTip('酒馆API设置已保存');
+        }
 
-  // 页面1
-  const page1Bg = document.getElementById("page1-bg");
-  const page1 = document.getElementById("home-page1");
-  if (wallpaperData.page1) {
-    page1.classList.add("wallpaper-set");
-    page1Bg.src = wallpaperData.page1.url;
-    page1Bg.style.display = "block";
-    if (wallpaperData.page1.isVideo) page1Bg.play();
-  } else {
-    page1.classList.remove("wallpaper-set");
-    page1Bg.style.display = "none";
-  }
+        // 其他酒馆函数占位
+        window.TavernShowScreen = TavernShowScreen;
+        window.TavernImportCharacter = TavernImportCharacter;
+        window.TavernEditCharacter = TavernEditCharacter;
+        window.TavernDeleteCharacter = TavernDeleteCharacter;
+        window.TavernAddMemory = TavernAddMemory;
+        window.TavernSortMemories = TavernSortMemories;
+        window.TavernEditMemory = TavernEditMemory;
+        window.TavernToggleWorld = TavernToggleWorld;
+        window.TavernToggleRegex = TavernToggleRegex;
+        window.TavernTestConnection = TavernTestConnection;
+        window.TavernSaveAPI = TavernSaveAPI;
 
-  // 页面2
-  const page2Bg = document.getElementById("page2-bg");
-  const page2 = document.getElementById("home-page2");
-  if (wallpaperData.page2) {
-    page2.classList.add("wallpaper-set");
-    page2Bg.src = wallpaperData.page2.url;
-    page2Bg.style.display = "block";
-    if (wallpaperData.page2.isVideo) page2Bg.play();
-  } else {
-    page2.classList.remove("wallpaper-set");
-    page2Bg.style.display = "none";
-  }
-}
+        // 初始化: 加载保存的API配置 (如果有)
+        (function loadSettings() {
+            const api = localStorage.getItem('AI_Phone_API');
+            if (api) {
+                try {
+                    const { platform, key, url } = JSON.parse(api);
+                    document.getElementById('api-platform').value = platform || 'openai';
+                    document.getElementById('api-key').value = key || '';
+                    document.getElementById('api-url').value = url || '';
+                } catch (e) {}
+            }
+            const tavernAPI = localStorage.getItem('Tavern_API');
+            if (tavernAPI) {
+                try {
+                    const { platform, key, url } = JSON.parse(tavernAPI);
+                    document.getElementById('tavern-api-platform').value = platform || 'openai';
+                    document.getElementById('tavern-api-key').value = key || '';
+                    document.getElementById('tavern-api-url').value = url || '';
+                } catch (e) {}
+            }
+        })();
 
-function saveWallpaperData() {
-  localStorage.setItem("wallpaper-data", JSON.stringify(wallpaperData));
-}
-
-function previewWallpaper(target) {
-  if (!wallpaperData[target]) {
-    alert("请先上传壁纸");
-    return;
-  }
-  go("home");
-  if (target === "unlock") {
-    go("unlock-screen");
-  } else if (target === "page1") {
-    switchPage(1);
-  } else if (target === "page2") {
-    switchPage(2);
-  }
-}
-
-// 其他功能简化实现
-function showTransfer(){
-  document.getElementById("transfer-pop").classList.add("active");
-}
-function sendTransfer(){
-  const amount = document.getElementById("transfer-amount").value;
-  if(!amount || amount < 0.1) return alert("请输入有效金额");
-  const m = document.getElementById("chat-messages");
-  const transferCard = document.createElement("div");
-  transferCard.className = "transfer-card user-msg";
-  transferCard.innerHTML = `
-    <div style="font-size:24px;font-weight:600">¥${amount}</div>
-    <div style="font-size:14px;opacity:0.8">你发起了一笔转账</div>
-    <div style="font-size:12px;margin-top:8px">DreamLove转账</div>
-  `;
-  m.appendChild(transferCard);
-  document.getElementById("transfer-pop").classList.remove("active");
-  document.getElementById("transfer-amount").value = "";
-  m.scrollTop = m.scrollHeight;
-}
-function showGiftSelect(){
-  document.getElementById("gift-pop").classList.add("active");
-}
-function sendGift(giftName){
-  const m = document.getElementById("chat-messages");
-  const giftCard = document.createElement("div");
-  giftCard.className = "gift-card user-msg";
-  giftCard.innerHTML = `
-    <div style="font-size:24px;font-weight:600">送出礼物</div>
-    <div class="gift-btn">開</div>
-    <div style="font-size:16px">${giftName}</div>
-  `;
-  m.appendChild(giftCard);
-  document.getElementById("gift-pop").classList.remove("active");
-  m.scrollTop = m.scrollHeight;
-}
-function publishMoment(){
-  const content = document.querySelector(".moment-input").value.trim();
-  if(!content) return alert("请输入内容");
-  const momentsList = document.getElementById("wechat-moments");
-  const newMoment = document.createElement("div");
-  newMoment.className = "moment-item";
-  newMoment.innerHTML = `
-    <div class="moment-header">
-      <div class="moment-avatar">我</div>
-      <div class="moment-name">我</div>
-    </div>
-    <div class="moment-content">${content}</div>
-    <div class="moment-actions">
-      <span class="moment-action" onclick="toggleLike(this)">❤️ 0</span>
-      <span class="moment-action" onclick="showComment(this)">💬 0</span>
-    </div>
-  `;
-  momentsList.insertBefore(newMoment, momentsList.firstChild);
-  document.querySelector(".moment-input").value = "";
-}
-function toggleLike(el){
-  el.classList.toggle("active");
-  let count = parseInt(el.textContent.split(" ")[1]);
-  el.textContent = el.classList.contains("active") ? `❤️ ${count + 1}` : `❤️ ${count - 1}`;
-}
-function showComment(el){
-  const comment = prompt("发表评论：");
-  if(comment){
-    const commentItem = document.createElement("div");
-    commentItem.className = "comment-item";
-    commentItem.innerHTML = `<strong>我：</strong>${comment}`;
-    el.closest(".moment-item").appendChild(commentItem);
-  }
-}
-
-// 启动主动发言
-startActiveChat();
-// 初始化加载壁纸
-loadSavedWallpapers();
-</script>
+        // 全局导出函数供onclick使用
+        window.showScreen = showScreen;
+        window.switchHomePage = switchHomePage;
+        window.enterChat = enterChat;
+        window.goBackFromChat = goBackFromChat;
+        window.sendMessage = sendMessage;
+        window.showEmojiPanel = showEmojiPanel;
+        window.insertEmoji = insertEmoji;
+        window.sendTransfer = sendTransfer;
+        window.sendGift = sendGift;
+        window.takePhoto = takePhoto;
+        window.showChatSettings = showChatSettings;
+        window.showAddFriendModal = showAddFriendModal;
+        window.selectWallpaper = selectWallpaper;
+        window.applyToAll = applyToAll;
+        window.uploadWallpaper = uploadWallpaper;
+        window.testAPIConnection = testAPIConnection;
+        window.saveAPISettings = saveAPISettings;
+    </script>
 </body>
 </html>
