@@ -201,16 +201,25 @@
         <button class="config-toggle" id="configToggle">⚙️</button>
         <div class="config-panel" id="configPanel">
             <div class="config-item">
-                <label>平台</label>
-                <select id="platformSelect">
-                    <option value="openai">OpenAI</option>
-                    <option value="doubao">豆包</option>
-                    <option value="deepseek">DeepSeek</option>
-                    <option value="openrouter">OpenRouter</option>
-                </select>
+                <label>名称</label>
+                <input type="text" id="configName" value="API连接 18">
             </div>
             <div class="config-item">
-                <label>API Key</label>
+                <label>模型平台</label>
+                <select id="platformSelect">
+                    <option value="openai">OpenAI</option>
+                    <option value="doubao">Doubao (豆包/火山云/字节跳动)</option>
+                    <option value="deepseek">DeepSeek (深度求索)</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="custom-openai">自定义 (OpenAI 协议)</option>
+                </select>
+            </div>
+            <div class="config-item" id="apiUrlItem" style="display: none;">
+                <label>API 接口地址</label>
+                <input type="text" id="apiUrlInput" placeholder="https://api.example.com/v1/chat/completions">
+            </div>
+            <div class="config-item">
+                <label>API 密钥</label>
                 <input type="password" id="apiKeyInput" placeholder="输入你的 API Key">
             </div>
             <div class="config-item">
@@ -218,11 +227,9 @@
                 <select id="modelSelect">
                     <option value="gpt-3.5-turbo">GPT-3.5-turbo</option>
                     <option value="gpt-4">GPT-4</option>
-                    <option value="doubao-pro">Doubao-pro</option>
-                    <option value="deepseek-chat">DeepSeek-chat</option>
                 </select>
             </div>
-            <button id="saveConfig">保存配置</button>
+            <button id="saveConfig">保存</button>
         </div>
     </div>
 
@@ -234,11 +241,25 @@
         const configPanel = document.getElementById('configPanel');
         const saveConfig = document.getElementById('saveConfig');
         const platformSelect = document.getElementById('platformSelect');
+        const apiUrlItem = document.getElementById('apiUrlItem');
+        const apiUrlInput = document.getElementById('apiUrlInput');
         const apiKeyInput = document.getElementById('apiKeyInput');
         const modelSelect = document.getElementById('modelSelect');
+        const configName = document.getElementById('configName');
+
+        // 平台与模型的映射关系
+        const platformModels = {
+            'openai': ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
+            'doubao': ['doubao-pro', 'doubao-4k', 'doubao-32k'],
+            'deepseek': ['deepseek-chat', 'deepseek-coder'],
+            'openrouter': ['openrouter/auto', 'anthropic/claude-3-sonnet'],
+            'custom-openai': ['gpt-3.5-turbo', 'gpt-4', '自定义模型']
+        };
 
         let currentConfig = {
+            name: 'API连接 18',
             platform: 'openai',
+            apiUrl: '',
             apiKey: '',
             model: 'gpt-3.5-turbo'
         };
@@ -246,9 +267,13 @@
         // 加载保存的配置
         if (localStorage.getItem('aiPhoneConfig')) {
             currentConfig = JSON.parse(localStorage.getItem('aiPhoneConfig'));
+            configName.value = currentConfig.name;
             platformSelect.value = currentConfig.platform;
+            apiUrlInput.value = currentConfig.apiUrl;
             apiKeyInput.value = currentConfig.apiKey;
+            updateModelList();
             modelSelect.value = currentConfig.model;
+            toggleApiUrlVisibility();
         }
 
         // 切换配置面板
@@ -256,10 +281,18 @@
             configPanel.classList.toggle('active');
         });
 
+        // 切换平台时更新模型列表和API地址输入框
+        platformSelect.addEventListener('change', () => {
+            updateModelList();
+            toggleApiUrlVisibility();
+        });
+
         // 保存配置
         saveConfig.addEventListener('click', () => {
             currentConfig = {
+                name: configName.value,
                 platform: platformSelect.value,
+                apiUrl: apiUrlInput.value,
                 apiKey: apiKeyInput.value,
                 model: modelSelect.value
             };
@@ -284,11 +317,18 @@
             userInput.value = '';
 
             try {
-                // 这里就是你刚才部署好的后端地址
-                const response = await fetch('https://ai-phone-3jj5kynr2.vercel.app/api/chat', {
+                let fetchUrl;
+                if (currentConfig.platform === 'custom-openai') {
+                    fetchUrl = currentConfig.apiUrl;
+                } else {
+                    fetchUrl = 'https://ai-phone-3jj5kynr2.vercel.app/api/chat';
+                }
+
+                const response = await fetch(fetchUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentConfig.apiKey}`
                     },
                     body: JSON.stringify({
                         platform: currentConfig.platform,
@@ -313,6 +353,28 @@
             message.textContent = text;
             screen.appendChild(message);
             screen.scrollTop = screen.scrollHeight;
+        }
+
+        // 更新模型列表
+        function updateModelList() {
+            const selectedPlatform = platformSelect.value;
+            const models = platformModels[selectedPlatform] || [];
+            modelSelect.innerHTML = '';
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
+            });
+        }
+
+        // 切换API地址输入框的可见性
+        function toggleApiUrlVisibility() {
+            if (platformSelect.value === 'custom-openai') {
+                apiUrlItem.style.display = 'block';
+            } else {
+                apiUrlItem.style.display = 'none';
+            }
         }
     </script>
 </body>
