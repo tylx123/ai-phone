@@ -10,7 +10,6 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background-color: #000;
@@ -21,7 +20,6 @@
             min-height: 100vh;
             padding: 20px;
         }
-
         .phone {
             width: 100%;
             max-width: 360px;
@@ -36,7 +34,6 @@
             overflow: hidden;
             position: relative;
         }
-
         .status-bar {
             height: 44px;
             background-color: #111;
@@ -46,7 +43,6 @@
             padding: 0 16px;
             font-size: 12px;
         }
-
         .screen {
             flex: 1;
             background-color: #000;
@@ -56,7 +52,6 @@
             flex-direction: column;
             gap: 12px;
         }
-
         .message {
             max-width: 80%;
             padding: 12px 16px;
@@ -64,26 +59,22 @@
             font-size: 14px;
             line-height: 1.4;
         }
-
         .user-msg {
             background-color: #007aff;
             align-self: flex-end;
             border-bottom-right-radius: 4px;
         }
-
         .ai-msg {
             background-color: #2c2c2c;
             align-self: flex-start;
             border-bottom-left-radius: 4px;
         }
-
         .input-area {
             background-color: #111;
             padding: 12px;
             display: flex;
             gap: 8px;
         }
-
         #userInput {
             flex: 1;
             background-color: #2c2c2c;
@@ -94,7 +85,6 @@
             font-size: 14px;
             outline: none;
         }
-
         #sendBtn {
             background-color: #007aff;
             border: none;
@@ -106,11 +96,9 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-
         #sendBtn:hover {
             background-color: #0056b3;
         }
-
         .config-panel {
             position: absolute;
             top: 0;
@@ -127,23 +115,19 @@
             transform: translateY(-100%);
             transition: transform 0.3s ease;
         }
-
         .config-panel.active {
             transform: translateY(0);
         }
-
         .config-item {
             width: 100%;
             max-width: 300px;
         }
-
         .config-item label {
             display: block;
             font-size: 12px;
             color: #888;
             margin-bottom: 4px;
         }
-
         .config-item select,
         .config-item input {
             width: 100%;
@@ -155,14 +139,12 @@
             font-size: 14px;
             outline: none;
         }
-
         .btn-group {
             display: flex;
             gap: 8px;
             width: 100%;
             max-width: 300px;
         }
-
         .btn {
             flex: 1;
             background-color: #007aff;
@@ -174,19 +156,15 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-
         .btn:hover {
             background-color: #0056b3;
         }
-
         .btn-secondary {
             background-color: #2c2c2c;
         }
-
         .btn-secondary:hover {
             background-color: #3a3a3a;
         }
-
         .config-toggle {
             position: absolute;
             top: 60px;
@@ -253,7 +231,6 @@
             </div>
         </div>
     </div>
-
     <script>
         const screen = document.getElementById('screen');
         const userInput = document.getElementById('userInput');
@@ -269,7 +246,6 @@
         const configName = document.getElementById('configName');
         const fetchModelsBtn = document.getElementById('fetchModelsBtn');
         const testConnectionBtn = document.getElementById('testConnectionBtn');
-
         // 平台与模型的映射关系
         const platformModels = {
             'openai': ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
@@ -278,7 +254,6 @@
             'openrouter': ['openrouter/auto', 'anthropic/claude-3-sonnet'],
             'custom-openai': [] // 自定义平台的模型将通过拉取获取
         };
-
         let currentConfig = {
             name: 'API连接 18',
             platform: 'openai',
@@ -286,7 +261,6 @@
             apiKey: '',
             model: 'gpt-3.5-turbo'
         };
-
         // 加载保存的配置
         if (localStorage.getItem('aiPhoneConfig')) {
             currentConfig = JSON.parse(localStorage.getItem('aiPhoneConfig'));
@@ -298,24 +272,19 @@
             modelSelect.value = currentConfig.model;
             toggleApiUrlVisibility();
         }
-
         // 切换配置面板
         configToggle.addEventListener('click', () => {
             configPanel.classList.toggle('active');
         });
-
         // 切换平台时更新模型列表和API地址输入框
         platformSelect.addEventListener('change', () => {
             updateModelList();
             toggleApiUrlVisibility();
         });
-
         // 拉取模型按钮点击事件
         fetchModelsBtn.addEventListener('click', fetchModels);
-
         // 测试链接按钮点击事件
         testConnectionBtn.addEventListener('click', testConnection);
-
         // 保存配置
         saveConfig.addEventListener('click', () => {
             currentConfig = {
@@ -329,7 +298,6 @@
             configPanel.classList.remove('active');
             addMessage('配置已保存', 'ai-msg');
         });
-
         // 发送消息
         sendBtn.addEventListener('click', sendMessage);
         userInput.addEventListener('keypress', (e) => {
@@ -338,26 +306,39 @@
             }
         });
 
+        // 1. 发送消息：自定义平台直连优先，跨域失败走后端转发；其他平台默认走后端
         async function sendMessage() {
             const text = userInput.value.trim();
             if (!text || !currentConfig.model) return;
-
             addMessage(text, 'user-msg');
             userInput.value = '';
-
             try {
                 let fetchUrl;
                 let requestBody;
-
+                // 自定义OpenAI平台：直连优先
                 if (currentConfig.platform === 'custom-openai') {
-                    // 自定义OpenAI协议，使用标准请求体
                     fetchUrl = `${currentConfig.apiUrl}/chat/completions`;
                     requestBody = {
                         model: currentConfig.model,
                         messages: [{ role: 'user', content: text }]
                     };
+                    // 第一步：尝试直连发送
+                    const directResponse = await fetch(fetchUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${currentConfig.apiKey}`
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                    if (!directResponse.ok) {
+                        throw new Error(`直连失败: HTTP ${directResponse.status}`);
+                    }
+                    const data = await directResponse.json();
+                    const reply = data.choices?.[0]?.message?.content || '回复失败';
+                    addMessage(reply, 'ai-msg');
                 } else {
-                    // 使用Vercel后端
+                    // 其他平台：默认走后端转发（原有逻辑，不变）
                     fetchUrl = 'https://ai-phone-3jj5kynr2.vercel.app/api/chat';
                     requestBody = {
                         platform: currentConfig.platform,
@@ -365,26 +346,55 @@
                         model: currentConfig.model,
                         messages: [{ role: 'user', content: text }]
                     };
+                    const response = await fetch(fetchUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${currentConfig.apiKey}`
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    const reply = data.choices?.[0]?.message?.content || '回复失败';
+                    addMessage(reply, 'ai-msg');
                 }
-
-                const response = await fetch(fetchUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentConfig.apiKey}`
-                    },
-                    body: JSON.stringify(requestBody)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                const reply = data.choices?.[0]?.message?.content || '回复失败';
-                addMessage(reply, 'ai-msg');
             } catch (error) {
-                addMessage(`❌ 发送失败: ${error.message}`, 'ai-msg');
+                // 自定义平台直连失败，自动走后端转发兜底
+                if (currentConfig.platform === 'custom-openai') {
+                    addMessage(`⚠️ 直连发送失败(${error.message})，尝试后端转发...`, 'ai-msg');
+                    try {
+                        const fetchUrl = 'https://ai-phone-3jj5kynr2.vercel.app/api/chat';
+                        const requestBody = {
+                            platform: 'custom-openai',
+                            apiUrl: currentConfig.apiUrl,
+                            apiKey: currentConfig.apiKey,
+                            model: currentConfig.model,
+                            messages: [{ role: 'user', content: text }]
+                        };
+                        const forwardResponse = await fetch(fetchUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${currentConfig.apiKey}`
+                            },
+                            body: JSON.stringify(requestBody)
+                        });
+                        if (!forwardResponse.ok) {
+                            throw new Error(`转发失败: HTTP ${forwardResponse.status}`);
+                        }
+                        const data = await forwardResponse.json();
+                        const reply = data.choices?.[0]?.message?.content || '回复失败';
+                        addMessage(reply, 'ai-msg');
+                    } catch (forwardError) {
+                        addMessage(`❌ 发送失败：${forwardError.message}`, 'ai-msg');
+                    }
+                } else {
+                    // 其他平台失败，直接提示
+                    addMessage(`❌ 发送失败: ${error.message}`, 'ai-msg');
+                }
             }
         }
 
@@ -430,73 +440,117 @@
             }
         }
 
-        // 拉取模型列表
+        // 2. 拉取模型：直连优先，跨域失败则走后端转发
         async function fetchModels() {
             const apiUrl = apiUrlInput.value.trim();
             const apiKey = apiKeyInput.value.trim();
-
             if (!apiUrl || !apiKey) {
                 addMessage('❌ 请先填写API接口地址和密钥', 'ai-msg');
                 return;
             }
-
             try {
-                addMessage('🔄 正在拉取模型列表...', 'ai-msg');
-                const response = await fetch(`${apiUrl}/models`, {
+                addMessage('🔄 正在拉取模型列表(直连)...', 'ai-msg');
+                // 第一步：尝试直连第三方API（速度快）
+                const directResponse = await fetch(`${apiUrl}/models`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${apiKey}`
                     }
                 });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (!directResponse.ok) {
+                    throw new Error(`直连失败: HTTP ${directResponse.status}`);
                 }
-
-                const data = await response.json();
+                const data = await directResponse.json();
                 const models = data.data || [];
-
                 if (models.length === 0) {
                     addMessage('❌ 未获取到任何模型', 'ai-msg');
                     return;
                 }
-
-                // 更新模型列表
                 platformModels['custom-openai'] = models.map(m => m.id);
                 updateModelList();
                 modelSelect.value = models[0].id;
-                addMessage(`✅ 成功拉取 ${models.length} 个模型`, 'ai-msg');
+                addMessage(`✅ 直连成功！拉取到 ${models.length} 个模型`, 'ai-msg');
             } catch (error) {
-                addMessage(`❌ 拉取模型失败: ${error.message}`, 'ai-msg');
+                // 第二步：直连失败（大概率CORS），自动走后端转发兜底
+                addMessage(`⚠️ 直连失败(${error.message})，尝试后端转发...`, 'ai-msg');
+                try {
+                    const forwardResponse = await fetch('https://ai-phone-3jj5kynr2.vercel.app/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            platform: 'custom-openai',
+                            apiUrl: apiUrl,
+                            action: 'fetchModels'
+                        })
+                    });
+                    if (!forwardResponse.ok) {
+                        throw new Error(`转发失败: HTTP ${forwardResponse.status}`);
+                    }
+                    const data = await forwardResponse.json();
+                    const models = data.data || [];
+                    if (models.length === 0) {
+                        addMessage('❌ 转发拉取：未获取到任何模型', 'ai-msg');
+                        return;
+                    }
+                    platformModels['custom-openai'] = models.map(m => m.id);
+                    updateModelList();
+                    modelSelect.value = models[0].id;
+                    addMessage(`✅ 转发成功！拉取到 ${models.length} 个模型`, 'ai-msg');
+                } catch (forwardError) {
+                    addMessage(`❌ 拉取失败：${forwardError.message}`, 'ai-msg');
+                }
             }
         }
 
-        // 测试链接
+        // 3. 测试链接：直连优先，跨域失败则走后端转发
         async function testConnection() {
             const apiUrl = apiUrlInput.value.trim();
             const apiKey = apiKeyInput.value.trim();
-
             if (!apiUrl || !apiKey) {
                 addMessage('❌ 请先填写API接口地址和密钥', 'ai-msg');
                 return;
             }
-
             try {
-                addMessage('🔄 正在测试链接...', 'ai-msg');
-                const response = await fetch(`${apiUrl}/models`, {
+                addMessage('🔄 正在测试链接(直连)...', 'ai-msg');
+                // 第一步：尝试直连第三方API（速度快）
+                const directResponse = await fetch(`${apiUrl}/models`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${apiKey}`
                     }
                 });
-
-                if (response.ok) {
-                    addMessage('✅ 连接成功！', 'ai-msg');
+                if (directResponse.ok) {
+                    addMessage('✅ 直连成功！链接有效', 'ai-msg');
                 } else {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`直连失败: HTTP ${directResponse.status}`);
                 }
             } catch (error) {
-                addMessage(`❌ 连接失败: ${error.message}`, 'ai-msg');
+                // 第二步：直连失败，自动走后端转发兜底
+                addMessage(`⚠️ 直连失败(${error.message})，尝试后端转发...`, 'ai-msg');
+                try {
+                    const forwardResponse = await fetch('https://ai-phone-3jj5kynr2.vercel.app/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            platform: 'custom-openai',
+                            apiUrl: apiUrl,
+                            action: 'testConnection'
+                        })
+                    });
+                    if (forwardResponse.ok) {
+                        addMessage('✅ 转发成功！链接有效', 'ai-msg');
+                    } else {
+                        throw new Error(`转发失败: HTTP ${forwardResponse.status}`);
+                    }
+                } catch (forwardError) {
+                    addMessage(`❌ 连接失败：${forwardError.message}`, 'ai-msg');
+                }
             }
         }
     </script>
