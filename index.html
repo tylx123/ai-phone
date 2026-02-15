@@ -1,907 +1,409 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>酒馆 · 完全体 · 极致完善版</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SillyAI · 完整版</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,Roboto,system-ui}
-html,body{max-width:420px;margin:0 auto;height:100vh;overflow:hidden;background:#121212;color:#e0e0e0}
-.screen{display:none;height:100%;overflow-y:auto;background:#121212}
-.active{display:block}
-
-.head{padding:16px;background:#1e1e1e;border-bottom:1px solid #333;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
-.head button{border:none;background:transparent;color:#e0e0e0;font-size:20px;cursor:pointer}
-.head h3{font-size:18px}
-.action-btn{background:linear-gradient(90deg,#ff69b4,#ff8c69);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:14px;cursor:pointer}
-
-.tavern-grid{padding:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.tavern-card{background:#1e1e1e;border-radius:16px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;border:1px solid #2d2d2d;transition:0.2s}
-.tavern-card:active{transform:scale(.96)}
-.tavern-icon{width:44px;height:44px;border-radius:14px;background:#2d2d2d;display:flex;align-items:center;justify-content:center;color:#ff69b4;font-size:22px}
-.tavern-title{font-size:15px;font-weight:600;color:#e0e0e0}
-.tavern-desc{font-size:12px;color:#999}
-
-.form-item{margin:16px}
-.form-label{font-size:15px;margin-bottom:8px;display:block}
-.form-input{width:100%;padding:12px;border:1px solid #333;border-radius:8px;background:#2d2d2d;color:#e0e0e0}
-.form-select{width:100%;padding:12px;border:1px solid #333;border-radius:8px;background:#2d2d2d;color:#e0e0e0}
-.btn-group{display:flex;gap:12px;margin:20px 16px}
-.btn{flex:1;padding:12px;border:none;border-radius:12px;font-size:15px;cursor:pointer}
-.btn-primary{background:#ff69b4;color:#fff}
-.btn-secondary{background:#2d2d2d;color:#e0e0e0}
-.status-tip{margin:16px;padding:12px;border-radius:8px;font-size:14px}
-.status-success{background:#1b3b2b;color:#4ade80}
-.status-error{background:#3b1b1f;color:#f87171}
-.model-list{margin:16px;max-height:150px;overflow-y:auto;border:1px solid #333;border-radius:8px;padding:8px}
-.model-item{padding:8px;border-bottom:1px solid #333;cursor:pointer}
-.model-item:hover{background:#2d2d2d}
-.set-item{background:#1e1e1e;border-radius:16px;padding:16px;margin:12px;display:flex;justify-content:space-between;align-items:center}
-.set-label{font-size:15px}
-.toggle{width:46px;height:24px;background:#333;border-radius:12px;position:relative;cursor:pointer}
-.toggle::after{content:'';width:20px;height:20px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:.2s}
-.toggle.active{background:#ff69b4}
-.toggle.active::after{left:24px}
-
-/* 聊天样式 */
-#chat{display:flex;flex-direction:column;height:100%}
-#chat-head{padding:16px;background:#1e1e1e;display:flex;align-items:center;gap:12px;position:sticky;top:0}
-#msg-list{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
-.msg{max-width:80%;padding:12px 16px;border-radius:16px;word-break:break-word}
-.msg.user{align-self:flex-end;background:#ff69b4;color:#fff}
-.msg.ai{align-self:flex-start;background:#1e1e1e;color:#e0e0e0}
-.msg.system{align-self:center;background:#333;color:#999;font-size:12px;max-width:90%}
-#chat-input{display:flex;gap:8px;padding:16px;background:#1e1e1e}
-#chat-input input{flex:1;background:#2d2d2d;color:#e0e0e0;border:none;border-radius:8px;padding:0 12px;outline:none}
-#chat-input button{background:#ff69b4;color:#fff;border:none;border-radius:8px;padding:0 16px;cursor:pointer}
-.render-box{padding:12px;border-radius:12px;background:#1a1a1a;margin-top:4px;width:100%;white-space:pre-wrap}
-
-/* 记忆/世界书卡片 */
-.memory-item, .world-item, .regex-item, .preset-item, .theme-item{background:#1e1e1e;border-radius:12px;padding:14px;margin:8px 16px;position:relative}
-.memory-text{font-size:14px;color:#e0e0e0;margin-bottom:8px;white-space:pre-wrap}
-.memory-time{font-size:12px;color:#888}
-.memory-actions{display:flex;gap:8px;margin-top:8px;justify-content:flex-end}
-.memory-actions button{padding:4px 12px;border:none;border-radius:16px;cursor:pointer}
-.btn-edit{background:#2d2d2d;color:#ff69b4}
-.btn-delete{background:#3b1b1f;color:#f87171}
-.search-box{margin:8px 16px;padding:8px;background:#2d2d2d;border-radius:8px;display:flex}
-.search-box input{flex:1;background:transparent;border:none;color:#e0e0e0;outline:none}
-.sort-btn{background:#2d2d2d;border:none;color:#ff69b4;padding:0 8px;cursor:pointer}
-
-.empty-state{text-align:center;padding:40px 20px;color:#666}
-.loading{text-align:center;padding:20px;color:#ff69b4}
-
-/* 角色卡片样式 */
-.char-card{background:#1e1e1e;border-radius:16px;padding:16px;margin:12px;display:flex;align-items:center;gap:12px;cursor:pointer}
-.char-avatar{width:48px;height:48px;border-radius:24px;background:#2d2d2d;display:flex;align-items:center;justify-content:center;font-size:24px}
-.char-info{flex:1}
-.char-name{font-size:16px;font-weight:600}
-.char-desc{font-size:12px;color:#999}
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,Roboto,Segoe UI}
+html,body{height:100%;background:#0f0f0f;color:#e5e5e5}
+.app{max-width:440px;height:100vh;margin:0 auto;background:#0f0f0f;position:relative;border-radius:20px;overflow:hidden}
+.page{position:absolute;top:0;left:0;width:100%;height:100%;display:none;padding:16px;padding-bottom:70px}
+.page.active{display:block}
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:10px 0;margin-bottom:12px}
+.back-btn{background:#1a1a1a;padding:6px 10px;border-radius:8px;cursor:pointer}
+.chat-area{height:calc(100% - 170px);overflow-y:auto;padding:8px 0}
+.msg{display:flex;margin-bottom:14px;max-width:80%}
+.msg.ai{align-items:flex-start}
+.msg.user{margin-left:auto;flex-direction:row-reverse}
+.avatar{width:38px;height:38px;border-radius:50%;background:#2563eb;margin:0 6px;
+background-size:cover;background-position:center}
+.bubble{padding:10px 14px;border-radius:16px;line-height:1.45;white-space:pre-wrap}
+.msg.ai .bubble{background:#1a1a1a}
+.msg.user .bubble{background:#2563eb;color:#fff}
+.input-bar{position:absolute;bottom:60px;left:0;width:100%;display:flex;padding:10px;background:#0f0f0f;border-top:1px solid #222}
+.input-bar input{flex:1;background:#1a1a1a;border:none;border-radius:22px;padding:0 14px;color:#fff;height:42px}
+.input-bar button{width:64px;height:42px;background:#2563eb;color:#fff;border:none;border-radius:22px;margin-left:8px}
+.bottom-bar{position:absolute;bottom:0;left:0;width:100%;height:60px;background:#0f0f0f;display:flex;justify-content:space-around;align-items:center;border-top:1px solid #222}
+.bar-item{text-align:center;font-size:12px;cursor:pointer}
+.bar-item.active{color:#2563eb}
+.card{background:#1a1a1a;border-radius:14px;padding:14px;margin-bottom:12px}
+.card h4{margin-bottom:6px}
+input,textarea,select{width:100%;background:#1a1a1a;border:none;border-radius:10px;padding:12px;color:#fff;margin-top:6px}
+.btn{width:100%;background:#2563eb;color:#fff;border:none;border-radius:12px;padding:12px;margin-top:8px}
+.btn.gray{background:#333}
+.btn.red{background:#b72424}
+.modal{position:absolute;bottom:0;left:0;width:100%;background:#1a1a1a;border-radius:20px 20px 0 0;padding:20px;display:none}
+.modal.active{display:block}
+.world-item{display:flex;justify-content:space-between;align-items:center;background:#222;border-radius:10px;padding:10px;margin-top:8px}
+.tag{display:inline-block;background:#222;padding:4px 8px;border-radius:8px;font-size:12px;margin-right:4px}
+.avatar-up{width:80px;height:80px;border-radius:50%;background:#2563eb;margin:10px auto;cursor:pointer;
+background-size:cover;background-position:center}
 </style>
 </head>
 <body>
 
-<!-- 主页 -->
-<div id="tavern" class="screen active">
-  <div class="head">
-    <button onclick="back()">←</button>
-    <h3>酒馆 Tavern</h3>
-    <button class="action-btn" onclick="goto('chat')">聊天</button>
-  </div>
-  <div class="tavern-grid">
-    <div class="tavern-card" onclick="goto('char')"><div class="tavern-icon">👤</div><div class="tavern-title">角色卡</div><div class="tavern-desc">PNG/JSON/ST</div></div>
-    <div class="tavern-card" onclick="goto('memory')"><div class="tavern-icon">🧠</div><div class="tavern-title">长期记忆</div><div class="tavern-desc">角色独立记忆</div></div>
-    <div class="tavern-card" onclick="goto('world')"><div class="tavern-icon">📚</div><div class="tavern-title">世界书</div><div class="tavern-desc">ST导入</div></div>
-    <div class="tavern-card" onclick="goto('regex')"><div class="tavern-icon">✍️</div><div class="tavern-title">正则</div><div class="tavern-desc">ST导入</div></div>
-    <div class="tavern-card" onclick="goto('preset')"><div class="tavern-icon">🎭</div><div class="tavern-title">预设</div><div class="tavern-desc">ST导入</div></div>
-    <div class="tavern-card" onclick="goto('theme')"><div class="tavern-icon">🎨</div><div class="tavern-title">主题</div><div class="tavern-desc">ST导入</div></div>
-    <div class="tavern-card" onclick="goto('user')"><div class="tavern-icon">👤</div><div class="tavern-title">用户设定</div><div class="tavern-desc">人设管理</div></div>
-    <div class="tavern-card" onclick="goto('api')"><div class="tavern-icon">☁️</div><div class="tavern-title">API配置</div><div class="tavern-desc">拉模型/测链接</div></div>
-    <div class="tavern-card" onclick="goto('settings')"><div class="tavern-icon">⚙️</div><div class="tavern-title">系统设置</div><div class="tavern-desc">全局配置</div></div>
-  </div>
-</div>
+<div class="app">
 
-<!-- 角色卡 -->
-<div id="char" class="screen">
-  <div class="head"><button onclick="back()">←</button><h3>角色卡</h3><button class="action-btn" onclick="importChar()">导入</button></div>
-  <div style="margin:16px;padding:18px;background:#1e1e1e;border-radius:16px;text-align:center">
-    <div>支持 PNG / JSON / SillyTavern 角色卡</div>
-    <button class="action-btn" style="margin-top:12px" onclick="importChar()">选择文件</button>
+<!-- 聊天页面 -->
+<div class="page active" id="page_chat">
+  <div class="top-bar">
+    <div>SillyAI 聊天</div>
+    <div style="cursor:pointer" onclick="openModal('modal_settings')">⚙️</div>
   </div>
-  <div id="char-list" class="char-list"></div>
-</div>
-
-<!-- 长期记忆 -->
-<div id="memory" class="screen">
-  <div class="head"><button onclick="back()">←</button><h3>长期记忆</h3><button class="action-btn" onclick="addMemory()">添加记忆</button></div>
-  <div style="padding:16px">
-    <div class="form-item">
-      <label class="form-label">当前角色</label>
-      <select class="form-select" id="mem_char" onchange="renderMemory()"></select>
-    </div>
-    <!-- 搜索排序栏 -->
-    <div class="search-box">
-      <input type="text" id="memory-search" placeholder="搜索记忆..." oninput="renderMemory()">
-      <button class="sort-btn" onclick="toggleMemorySort()">⏲️ 时间</button>
-    </div>
-    <div id="memory-list"></div>
+  <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+    <div class="tag" onclick="goto('char')">角色</div>
+    <div class="tag" onclick="goto('world')">世界书</div>
+    <div class="tag" onclick="goto('memory')">记忆</div>
+    <div class="tag" onclick="goto('prompt')">提示词</div>
+    <div class="tag" onclick="goto('api')">API</div>
+    <div class="tag" onclick="exportChat()">导出聊天</div>
   </div>
-</div>
-
-<!-- 世界书 -->
-<div id="world" class="screen">
-  <div class="head"><button onclick="back()">←</button><h3>世界书</h3><button class="action-btn" onclick="importWorld()">导入ST世界书</button></div>
-  <div id="world-list" class="world-list"></div>
-</div>
-
-<!-- 正则 -->
-<div id="regex" class="screen">
-  <div class="head"><button onclick="back()">←</button><h3>正则规则</h3><button class="action-btn" onclick="importRegex()">导入ST正则</button></div>
-  <div id="regex-list" class="regex-list"></div>
-</div>
-
-<!-- 预设 -->
-<div id="preset" class="screen">
-  <div class="head"><button onclick="back()">←</button><h3>预设</h3><button class="action-btn" onclick="importPreset()">导入</button></div>
-  <div id="preset-list" class="preset-list"></div>
-</div>
-
-<!-- 主题 -->
-<div id="theme" class="screen">
-  <div class="head"><button onclick="back()">←</button><h3>主题</h3><button class="action-btn" onclick="importTheme()">导入</button></div>
-  <div id="theme-list" class="theme-list"></div>
-</div>
-
-<!-- 用户设定 -->
-<div id="user" class="screen">
-  <div class="head"><button onclick="back()">←</button><h3>用户设定</h3></div>
-  <div style="padding:16px">
-    <div class="form-item">
-      <label class="form-label">用户昵称</label>
-      <input class="form-input" id="user_name">
-    </div>
-    <div class="form-item">
-      <label class="form-label">用户人设</label>
-      <textarea class="form-input" id="user_persona" rows="4" placeholder="例如：喜欢冒险，性格开朗..."></textarea>
-    </div>
-    <button class="btn-primary" style="width:100%" onclick="saveUser()">保存</button>
-  </div>
-</div>
-
-<!-- 系统设置 -->
-<div id="settings" class="screen">
-  <div class="head"><button onclick="back()">←</button><h3>系统设置</h3></div>
-  <div class="set-item" onclick="toggleSetting('auto_mem')">
-    <div class="set-label">自动记录对话到记忆</div>
-    <div class="toggle active" id="auto_mem"></div>
-  </div>
-  <div class="set-item" onclick="toggleSetting('inject_mem')">
-    <div class="set-label">记忆注入对话</div>
-    <div class="toggle active" id="inject_mem"></div>
-  </div>
-  <div class="set-item" onclick="toggleSetting('auto_save')">
-    <div class="set-label">自动保存对话历史</div>
-    <div class="toggle active" id="auto_save"></div>
-  </div>
-</div>
-
-<!-- API配置 -->
-<div id="api" class="screen">
-  <div class="head"><button onclick="back()">←</button><h3>API配置</h3></div>
-  <div style="padding:16px">
-    <div class="form-item">
-      <label class="form-label">Base URL</label>
-      <input class="form-input" id="api_url" placeholder="https://api.openai.com/v1">
-    </div>
-    <div class="form-item">
-      <label class="form-label">API Key</label>
-      <input class="form-input" id="api_key" type="password">
-    </div>
-    <div class="form-item">
-      <label class="form-label">模型名</label>
-      <input class="form-input" id="api_model" placeholder="gpt-3.5-turbo">
-    </div>
-    <div class="btn-group">
-      <button class="btn btn-secondary" onclick="fetchModels()">拉取模型</button>
-      <button class="btn btn-secondary" onclick="testApi()">测试连接</button>
-    </div>
-    <div id="model-list" class="model-list" style="display:none"></div>
-    <div id="api-status" class="status-tip" style="display:none"></div>
-    <button class="btn-primary" style="width:100%;margin-top:16px" onclick="saveApi()">保存</button>
-  </div>
-</div>
-
-<!-- 聊天 -->
-<div id="chat" class="screen">
-  <div id="chat-head">
-    <button onclick="back()">←</button>
-    <h3 id="chat-title">酒馆聊天</h3>
-    <button class="action-btn" onclick="clearChat()">清空</button>
-  </div>
-  <div id="msg-list"></div>
-  <div id="chat-input">
-    <input id="msg_input" placeholder="输入消息..." onkeypress="if(event.key==='Enter')sendMsg()">
+  <div class="chat-area" id="chat_box"></div>
+  <div class="input-bar">
+    <input id="msg_input" placeholder="输入消息…" autocomplete="off">
     <button onclick="sendMsg()">发送</button>
   </div>
 </div>
 
+<!-- 角色卡 -->
+<div class="page" id="page_char">
+  <div class="top-bar"><div class="back-btn" onclick="goto('chat')">←</div><div>角色卡</div></div>
+  <div class="avatar-up" id="char_avatar" onclick="pickAvatar()"></div>
+  <div class="card"><h4>角色名称</h4><input id="char_name"></div>
+  <div class="card"><h4>人格设定</h4><textarea id="char_persona" rows="3"></textarea></div>
+  <div class="card"><h4>说话风格</h4><textarea id="char_style" rows="3"></textarea></div>
+  <div class="card"><h4>背景故事</h4><textarea id="char_story" rows="4"></textarea></div>
+  <button class="btn" onclick="saveChar()">保存角色</button>
+  <button class="btn gray" onclick="exportChar()">导出角色</button>
+  <button class="btn gray" onclick="importChar()">导入角色</button>
+</div>
+
+<!-- 世界书（权重+深度+开关） -->
+<div class="page" id="page_world">
+  <div class="top-bar"><div class="back-btn" onclick="goto('chat')">←</div><div>世界书</div></div>
+  <div class="card"><h4>关键词</h4><input id="w_key" placeholder="用逗号分隔"></div>
+  <div class="card"><h4>触发内容</h4><textarea id="w_value" rows="2"></textarea></div>
+  <div class="card"><h4>权重</h4><select id="w_weight">
+    <option value="1">低</option><option value="2" selected>中</option><option value="3">高</option>
+  </select></div>
+  <div class="card"><h4>深度</h4><select id="w_depth">
+    <option value="0">浅</option><option value="1" selected>中</option><option value="2">深</option>
+  </select></div>
+  <div class="card"><h4>启用</h4><select id="w_enabled">
+    <option value="1">是</option><option value="0">否</option>
+  </select></div>
+  <button class="btn" onclick="addWorld()">添加规则</button>
+  <div id="world_list"></div>
+</div>
+
+<!-- 长期记忆 -->
+<div class="page" id="page_memory">
+  <div class="top-bar"><div class="back-btn" onclick="goto('chat')">←</div><div>长期记忆</div></div>
+  <div class="card"><h4>用户信息</h4><textarea id="mem_user" rows="3"></textarea></div>
+  <div class="card"><h4>对话总结</h4><textarea id="mem_sum" rows="4"></textarea></div>
+  <button class="btn" onclick="saveMemory()">保存记忆</button>
+</div>
+
+<!-- 系统提示词 -->
+<div class="page" id="page_prompt">
+  <div class="top-bar"><div class="back-btn" onclick="goto('chat')">←</div><div>系统提示词</div></div>
+  <div class="card"><textarea id="sys_prompt" rows="9"></textarea></div>
+  <button class="btn" onclick="savePrompt()">保存</button>
+</div>
+
+<!-- API 设置 -->
+<div class="page" id="page_api">
+  <div class="top-bar"><div class="back-btn" onclick="goto('chat')">←</div><div>API 设置</div></div>
+  <div class="card"><h4>API 地址</h4><input id="api_url" placeholder="https://api.openai.com/v1/chat/completions"></div>
+  <div class="card"><h4>API Key</h4><input id="api_key" type="password"></div>
+  <div class="card"><h4>模型</h4><input id="api_model" value="gpt-3.5-turbo"></div>
+  <button class="btn" onclick="saveApi()">保存 API 设置</button>
+</div>
+
+<!-- 设置弹窗 -->
+<div class="modal" id="modal_settings">
+  <h4>设置</h4>
+  <div class="card" onclick="clearChat()">清空对话</div>
+  <div class="card" onclick="exportAll()">备份全部数据</div>
+  <button class="btn" onclick="closeModal()">关闭</button>
+</div>
+
+<!-- 底部导航 -->
+<div class="bottom-bar">
+  <div class="bar-item active" onclick="goto('chat')">💬对话</div>
+  <div class="bar-item" onclick="goto('char')">👤角色</div>
+  <div class="bar-item" onclick="goto('world')">🌍世界书</div>
+  <div class="bar-item" onclick="goto('memory')">🧠记忆</div>
+</div>
+
+</div>
+
 <script>
-// ==================== 路由系统 ====================
-let hist = ['tavern'];
-function goto(id) {
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  if (hist[hist.length-1] !== id) hist.push(id);
-}
-function back() {
-  hist.pop();
-  let prev = hist.pop() || 'tavern';
-  goto(prev);
-}
-
-// ==================== 数据存储 ====================
-let DB = JSON.parse(localStorage.getItem('tavern_extreme')) || {
-  user: { name: '用户', persona: '' },
-  api: { url: 'https://api.openai.com/v1', key: '', model: 'gpt-3.5-turbo' },
-  chars: [
-    { id: 'default', name: '默认助手', desc: '一个友好的AI助手', avatar: '🤖', data: null }
-  ],
-  curChar: 0,
-  memory: { default: [] },
-  worlds: [],
-  regexes: [],
-  presets: [],
-  themes: [],
-  settings: {
-    auto_mem: true,
-    inject_mem: true,
-    auto_save: true
+const chat_box = document.getElementById('chat_box')
+let config = JSON.parse(localStorage.getItem('SILLY_FULL')) || {
+  char: {
+    name:"小七月",
+    avatar:"https://picsum.photos/200/200?random=1",
+    persona:"温柔、可爱、粘人、有点小傲娇",
+    style:"简短、口语、带表情、不高冷",
+    story:"喜欢和你聊天，一直陪着你。"
   },
-  chats: {},
-  // 记忆排序：true=时间升序（旧的在前），false=降序（新的在前）
-  memorySortAsc: false
-};
-
-function saveDB() {
-  localStorage.setItem('tavern_extreme', JSON.stringify(DB));
+  world: [],
+  memory: { user:"", sum:"" },
+  prompt: `你要完全沉浸扮演角色，自然、有感情、不重复、不呆板。
+严格遵守人格、说话风格、背景故事。
+世界书内容会自动注入。`,
+  api: { url:"", key:"", model:"gpt-3.5-turbo" },
+  chars: [] // 多角色
 }
 
-// ==================== 初始化 ====================
-function init() {
-  document.getElementById('user_name').value = DB.user.name;
-  document.getElementById('user_persona').value = DB.user.persona || '';
-  document.getElementById('api_url').value = DB.api.url;
-  document.getElementById('api_key').value = DB.api.key;
-  document.getElementById('api_model').value = DB.api.model;
-  for (let key in DB.settings) {
-    let el = document.getElementById(key);
-    if (el) el.classList.toggle('active', DB.settings[key]);
+// 页面切换
+function goto(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+  document.getElementById('page_'+page).classList.add('active')
+  document.querySelectorAll('.bar-item').forEach((item,i)=>{
+    item.classList.toggle('active', ['chat','char','world','memory'].indexOf(page)===i)
+  })
+}
+
+// 发送 + 流式回复
+async function sendMsg(){
+  const txt = document.getElementById('msg_input').value.trim()
+  if(!txt) return
+  addMsg('user', txt)
+  document.getElementById('msg_input').value = ''
+
+  // 世界书匹配（权重+深度+启用）
+  const worldInject = config.world
+    .filter(w=>w.enabled==1 && w.key.split(',').some(k=>txt.includes(k.trim())))
+    .sort((a,b)=>b.weight - a.weight)
+    .map(w=>w.value)
+    .join('\n')
+
+  const system = `${config.prompt}
+角色：${config.char.name}
+人格：${config.char.persona}
+风格：${config.char.style}
+背景：${config.char.story}
+用户：${config.memory.user}
+总结：${config.memory.sum}
+世界书：${worldInject}
+自然对话，不要解释自己。`
+
+  if(!config.api.url){
+    addMsg('ai','请先填写 API 地址')
+    return
   }
-  renderChar();
-  renderMemory();
-  updateChatTitle();
-  renderWorlds();
-  renderRegexes();
-  renderPresets();
-  renderThemes();
-}
-// 页面加载完成后初始化
-window.addEventListener('load', init);
 
-// ==================== 角色管理 ====================
-function renderChar() {
-  let list = document.getElementById('char-list');
-  list.innerHTML = DB.chars.map((c, i) => `
-    <div class="char-card" onclick="selectChar(${i})">
-      <div class="char-avatar">${c.avatar || '👤'}</div>
-      <div class="char-info">
-        <div class="char-name">${escapeHtml(c.name)}</div>
-        <div class="char-desc">${escapeHtml(c.desc || '无描述')}</div>
-      </div>
-      <button class="action-btn" onclick="event.stopPropagation();deleteChar(${i})">删除</button>
-    </div>
-  `).join('');
-  let sel = document.getElementById('mem_char');
-  if (sel) {
-    sel.innerHTML = DB.chars.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-  }
-}
+  // 占位气泡
+  const bubble = document.createElement('div')
+  bubble.className = 'msg ai'
+  bubble.innerHTML = `<div class="avatar" style="background-image:url('${config.char.avatar}')"></div>
+  <div class="bubble" id="stream"></div>`
+  chat_box.appendChild(bubble)
+  const stream = document.getElementById('stream')
+  let full = ''
 
-function selectChar(i) {
-  DB.curChar = i;
-  saveDB();
-  updateChatTitle();
-  goto('chat');
-}
-
-function deleteChar(i) {
-  if (DB.chars.length <= 1) {
-    alert('至少保留一个角色');
-    return;
-  }
-  let cid = DB.chars[i].id;
-  DB.chars.splice(i, 1);
-  delete DB.memory[cid];
-  if (DB.curChar >= i) DB.curChar = Math.max(0, DB.curChar - 1);
-  saveDB();
-  renderChar();
-  updateChatTitle();
-}
-
-// ==================== 导入角色卡（支持PNG/JSON）====================
-function importChar() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.png,.json,.char,.webp';
-  input.onchange = async (e) => {
-    let file = e.target.files[0];
-    if (!file) return;
-    try {
-      let name = file.name.replace(/\.\w+$/, '');
-      let id = 'char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-      let desc = '';
-      let avatar = '👤';
-      let charData = null;
-      // 根据文件类型处理
-      if (file.name.toLowerCase().endsWith('.png') || file.name.toLowerCase().endsWith('.webp')) {
-        // 解析PNG tEXt块
-        const buffer = await file.arrayBuffer();
-        const view = new DataView(buffer);
-        // PNG签名: 137 80 78 71 13 10 26 10
-        if (view.getUint32(0) !== 0x89504E47 || view.getUint32(4) !== 0x0D0A1A0A) {
-          throw new Error('不是有效的PNG文件');
-        }
-        let offset = 8;
-        while (offset < buffer.byteLength) {
-          const length = view.getUint32(offset);
-          const type = String.fromCharCode(view.getUint8(offset+4), view.getUint8(offset+5), view.getUint8(offset+6), view.getUint8(offset+7));
-          offset += 8;
-          if (type === 'tEXt') {
-            // 读取关键字直到0
-            let keywordEnd = offset;
-            while (keywordEnd < offset + length && view.getUint8(keywordEnd) !== 0) keywordEnd++;
-            const keyword = new TextDecoder().decode(new Uint8Array(buffer, offset, keywordEnd - offset));
-            if (keyword === 'chara' || keyword === 'Character' || keyword === 'data') {
-              const textStart = keywordEnd + 1; // 跳过0
-              const textLength = offset + length - textStart;
-              const text = new TextDecoder().decode(new Uint8Array(buffer, textStart, textLength));
-              try {
-                charData = JSON.parse(text);
-                name = charData.name || name;
-                desc = charData.description || charData.desc || '';
-                avatar = charData.avatar || '👤';
-              } catch (e) { console.warn('tEXt块内容不是JSON', text); }
-              break;
-            }
-          }
-          offset += length + 4; // CRC
-        }
-      } else if (file.name.toLowerCase().endsWith('.json') || file.name.toLowerCase().endsWith('.char')) {
-        let text = await file.text();
-        try {
-          charData = JSON.parse(text);
-          name = charData.name || name;
-          desc = charData.description || charData.desc || '';
-          avatar = charData.avatar || '👤';
-        } catch (e) {}
-      }
-      DB.chars.push({ id, name, desc, avatar, data: charData });
-      DB.memory[id] = [];
-      saveDB();
-      renderChar();
-      alert(`导入成功：${name}`);
-    } catch (err) {
-      alert('导入失败：' + err.message);
-    }
-  };
-  input.click();
-}
-
-function updateChatTitle() {
-  let title = document.getElementById('chat-title');
-  if (title && DB.chars[DB.curChar]) {
-    title.innerText = `与 ${DB.chars[DB.curChar].name} 聊天`;
-  }
-}
-
-// ==================== 长期记忆系统（增强版）====================
-let memorySortAsc = DB.memorySortAsc; // true=升序（旧的在前）
-
-function toggleMemorySort() {
-  memorySortAsc = !memorySortAsc;
-  DB.memorySortAsc = memorySortAsc;
-  saveDB();
-  renderMemory();
-}
-
-function renderMemory() {
-  let cid = document.getElementById('mem_char')?.value;
-  if (!cid) return;
-  let mems = DB.memory[cid] || [];
-  let searchTerm = document.getElementById('memory-search')?.value.toLowerCase() || '';
-  // 过滤
-  if (searchTerm) {
-    mems = mems.filter(m => m.text.toLowerCase().includes(searchTerm));
-  }
-  // 排序
-  mems.sort((a, b) => {
-    let tA = new Date(a.time).getTime();
-    let tB = new Date(b.time).getTime();
-    return memorySortAsc ? tA - tB : tB - tA;
-  });
-  let list = document.getElementById('memory-list');
-  if (mems.length === 0) {
-    list.innerHTML = '<div class="empty-state">暂无记忆</div>';
-    return;
-  }
-  list.innerHTML = mems.map((m, i) => `
-    <div class="memory-item" data-index="${i}">
-      <div class="memory-text">${escapeHtml(m.text)}</div>
-      <div class="memory-time">${escapeHtml(m.time)}</div>
-      <div class="memory-actions">
-        <button class="btn-edit" onclick="editMemory('${cid}', ${i})">编辑</button>
-        <button class="btn-delete" onclick="delMemory('${cid}', ${i})">删除</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-function addMemory() {
-  let cid = document.getElementById('mem_char')?.value;
-  if (!cid) { alert('请先选择角色'); return; }
-  let text = prompt('输入记忆内容：');
-  if (!text) return;
-  DB.memory[cid] = DB.memory[cid] || [];
-  DB.memory[cid].push({ text, time: new Date().toLocaleString() });
-  saveDB();
-  renderMemory();
-}
-
-function editMemory(cid, idx) {
-  let mem = DB.memory[cid][idx];
-  let newText = prompt('编辑记忆内容：', mem.text);
-  if (newText !== null && newText.trim() !== '') {
-    mem.text = newText.trim();
-    mem.time = new Date().toLocaleString() + ' (已编辑)';
-    saveDB();
-    renderMemory();
-  }
-}
-
-function delMemory(cid, i) {
-  if (confirm('确定删除这条记忆吗？')) {
-    DB.memory[cid].splice(i, 1);
-    saveDB();
-    renderMemory();
-  }
-}
-
-// 自动记录记忆
-function autoSaveMemory(text, role = 'user') {
-  if (!DB.settings.auto_mem) return;
-  let cid = DB.chars[DB.curChar]?.id;
-  if (!cid) return;
-  DB.memory[cid] = DB.memory[cid] || [];
-  DB.memory[cid].push({ text: `[${role}] ${text}`, time: new Date().toLocaleString() });
-  saveDB();
-}
-
-// 获取当前角色记忆（用于注入）
-function getCurMemory() {
-  if (!DB.settings.inject_mem) return '';
-  let cid = DB.chars[DB.curChar]?.id;
-  if (!cid) return '';
-  let mems = DB.memory[cid] || [];
-  return mems.slice(-10).map(m => m.text).join('\n');
-}
-
-// ==================== 世界书（完整实现）====================
-function importWorld() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = async (e) => {
-    let file = e.target.files[0];
-    if (!file) return;
-    try {
-      let text = await file.text();
-      let data = JSON.parse(text);
-      DB.worlds.push({
-        id: Date.now(),
-        name: file.name,
-        data: data,
-        enabled: true,
-        time: new Date().toLocaleString()
-      });
-      saveDB();
-      renderWorlds();
-      alert('世界书导入成功');
-    } catch (err) {
-      alert('解析失败：' + err.message);
-    }
-  };
-  input.click();
-}
-
-function renderWorlds() {
-  let list = document.getElementById('world-list');
-  if (!list) return;
-  if (DB.worlds.length === 0) {
-    list.innerHTML = '<div class="empty-state">暂无世界书，点击导入添加</div>';
-    return;
-  }
-  list.innerHTML = DB.worlds.map((w, i) => `
-    <div class="world-item">
-      <div style="display:flex; justify-content:space-between; align-items:center">
-        <span style="font-weight:600">${escapeHtml(w.name)}</span>
-        <span class="toggle ${w.enabled ? 'active' : ''}" onclick="toggleWorld(${i})" style="width:40px; height:20px"></span>
-      </div>
-      <div style="font-size:12px; color:#888; margin:4px 0">${escapeHtml(w.time)}</div>
-      <button class="action-btn" onclick="deleteWorld(${i})">删除</button>
-    </div>
-  `).join('');
-}
-
-function toggleWorld(index) {
-  DB.worlds[index].enabled = !DB.worlds[index].enabled;
-  saveDB();
-  renderWorlds();
-}
-
-function deleteWorld(i) {
-  if (confirm('删除世界书？')) {
-    DB.worlds.splice(i, 1);
-    saveDB();
-    renderWorlds();
-  }
-}
-
-// ==================== 正则（类似世界书）====================
-function importRegex() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = async (e) => {
-    let file = e.target.files[0];
-    if (!file) return;
-    try {
-      let text = await file.text();
-      let data = JSON.parse(text);
-      DB.regexes.push({
-        id: Date.now(),
-        name: file.name,
-        data: data,
-        enabled: true,
-        time: new Date().toLocaleString()
-      });
-      saveDB();
-      renderRegexes();
-      alert('正则导入成功');
-    } catch (err) {
-      alert('解析失败：' + err.message);
-    }
-  };
-  input.click();
-}
-
-function renderRegexes() {
-  let list = document.getElementById('regex-list');
-  if (!list) return;
-  if (DB.regexes.length === 0) {
-    list.innerHTML = '<div class="empty-state">暂无正则规则</div>';
-    return;
-  }
-  list.innerHTML = DB.regexes.map((r, i) => `
-    <div class="regex-item">
-      <div style="display:flex; justify-content:space-between;">
-        <span style="font-weight:600">${escapeHtml(r.name)}</span>
-        <span class="toggle ${r.enabled ? 'active' : ''}" onclick="toggleRegex(${i})"></span>
-      </div>
-      <div style="font-size:12px; color:#888">${escapeHtml(r.time)}</div>
-      <button class="action-btn" onclick="deleteRegex(${i})">删除</button>
-    </div>
-  `).join('');
-}
-
-function toggleRegex(index) {
-  DB.regexes[index].enabled = !DB.regexes[index].enabled;
-  saveDB();
-  renderRegexes();
-}
-
-function deleteRegex(i) {
-  if (confirm('删除正则？')) {
-    DB.regexes.splice(i, 1);
-    saveDB();
-    renderRegexes();
-  }
-}
-
-// ==================== 预设 ====================
-function importPreset() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = async (e) => {
-    let file = e.target.files[0];
-    if (!file) return;
-    try {
-      let text = await file.text();
-      let data = JSON.parse(text);
-      DB.presets.push({
-        id: Date.now(),
-        name: file.name,
-        data: data,
-        time: new Date().toLocaleString()
-      });
-      saveDB();
-      renderPresets();
-      alert('预设导入成功');
-    } catch (err) {
-      alert('解析失败：' + err.message);
-    }
-  };
-  input.click();
-}
-
-function renderPresets() {
-  let list = document.getElementById('preset-list');
-  if (!list) return;
-  if (DB.presets.length === 0) {
-    list.innerHTML = '<div class="empty-state">暂无预设</div>';
-    return;
-  }
-  list.innerHTML = DB.presets.map((p, i) => `
-    <div class="preset-item">
-      <div style="font-weight:600">${escapeHtml(p.name)}</div>
-      <div style="font-size:12px; color:#888">${escapeHtml(p.time)}</div>
-      <button class="action-btn" onclick="deletePreset(${i})">删除</button>
-    </div>
-  `).join('');
-}
-
-function deletePreset(i) {
-  if (confirm('删除预设？')) {
-    DB.presets.splice(i, 1);
-    saveDB();
-    renderPresets();
-  }
-}
-
-// ==================== 主题 ====================
-function importTheme() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = async (e) => {
-    let file = e.target.files[0];
-    if (!file) return;
-    try {
-      let text = await file.text();
-      let data = JSON.parse(text);
-      DB.themes.push({
-        id: Date.now(),
-        name: file.name,
-        data: data,
-        time: new Date().toLocaleString()
-      });
-      saveDB();
-      renderThemes();
-      alert('主题导入成功');
-    } catch (err) {
-      alert('解析失败：' + err.message);
-    }
-  };
-  input.click();
-}
-
-function renderThemes() {
-  let list = document.getElementById('theme-list');
-  if (!list) return;
-  if (DB.themes.length === 0) {
-    list.innerHTML = '<div class="empty-state">暂无主题</div>';
-    return;
-  }
-  list.innerHTML = DB.themes.map((t, i) => `
-    <div class="theme-item">
-      <div style="font-weight:600">${escapeHtml(t.name)}</div>
-      <div style="font-size:12px; color:#888">${escapeHtml(t.time)}</div>
-      <button class="action-btn" onclick="deleteTheme(${i})">删除</button>
-    </div>
-  `).join('');
-}
-
-function deleteTheme(i) {
-  if (confirm('删除主题？')) {
-    DB.themes.splice(i, 1);
-    saveDB();
-    renderThemes();
-  }
-}
-
-// ==================== 用户/API/设置 ====================
-function saveUser() {
-  DB.user.name = document.getElementById('user_name').value;
-  DB.user.persona = document.getElementById('user_persona').value;
-  saveDB();
-  alert('用户设定已保存');
-}
-
-async function testApi() {
-  let url = document.getElementById('api_url').value;
-  let key = document.getElementById('api_key').value;
-  if (!url || !key) { alert('请填写URL和API Key'); return; }
-  let statusEl = document.getElementById('api-status');
-  statusEl.style.display = 'block';
-  statusEl.className = 'status-tip';
-  statusEl.innerText = '测试中...';
   try {
-    let res = await fetch(url + '/models', { headers: { 'Authorization': 'Bearer ' + key } });
-    if (res.ok) {
-      statusEl.className = 'status-tip status-success';
-      statusEl.innerText = '✅ 连接成功';
-    } else if (res.status === 401) {
-      statusEl.className = 'status-tip status-error';
-      statusEl.innerText = '❌ API Key 无效';
-    } else if (res.status === 429) {
-      statusEl.className = 'status-tip status-error';
-      statusEl.innerText = '❌ 请求过于频繁，请稍后再试';
-    } else if (res.status >= 500) {
-      statusEl.className = 'status-tip status-error';
-      statusEl.innerText = '❌ 服务器错误，请稍后重试';
-    } else {
-      statusEl.className = 'status-tip status-error';
-      statusEl.innerText = '❌ 连接失败，状态码：' + res.status;
-    }
-  } catch (err) {
-    statusEl.className = 'status-tip status-error';
-    statusEl.innerText = '❌ 网络错误：' + err.message;
-  }
-}
-
-async function fetchModels() {
-  let url = document.getElementById('api_url').value;
-  let key = document.getElementById('api_key').value;
-  if (!url || !key) { alert('请填写URL和API Key'); return; }
-  let listEl = document.getElementById('model-list');
-  listEl.style.display = 'block';
-  listEl.innerHTML = '<div class="loading">加载中...</div>';
-  try {
-    let res = await fetch(url + '/models', { headers: { 'Authorization': 'Bearer ' + key } });
-    if (!res.ok) throw new Error('请求失败');
-    let data = await res.json();
-    listEl.innerHTML = data.data.map(m => `<div class="model-item" onclick="selModel('${m.id}')">${escapeHtml(m.id)}</div>`).join('');
-  } catch (err) {
-    listEl.innerHTML = '<div class="status-error">加载失败</div>';
-  }
-}
-
-function selModel(id) {
-  document.getElementById('api_model').value = id;
-  document.getElementById('model-list').style.display = 'none';
-}
-
-function saveApi() {
-  DB.api.url = document.getElementById('api_url').value;
-  DB.api.key = document.getElementById('api_key').value;
-  DB.api.model = document.getElementById('api_model').value;
-  saveDB();
-  alert('API配置已保存');
-}
-
-function toggleSetting(id) {
-  let el = document.getElementById(id);
-  if (!el) return;
-  // 阻止事件冒泡，避免触发父级点击
-  event.stopPropagation();
-  DB.settings[id] = !DB.settings[id];
-  el.classList.toggle('active', DB.settings[id]);
-  saveDB();
-}
-
-// ==================== 聊天系统 ====================
-let isLoading = false;
-
-async function sendMsg() {
-  let input = document.getElementById('msg_input');
-  let txt = input.value.trim();
-  if (!txt || isLoading) return;
-  input.value = '';
-  isLoading = true;
-  addMessage('user', txt);
-  autoSaveMemory(txt, 'user');
-  try {
-    let reply = await getAIResponse(txt);
-    addMessage('ai', reply);
-    autoSaveMemory(reply, 'ai');
-  } catch (err) {
-    addMessage('system', '❌ ' + err.message);
-  }
-  isLoading = false;
-  if (DB.settings.auto_save) saveChatHistory();
-}
-
-function addMessage(role, content) {
-  let list = document.getElementById('msg-list');
-  let msgDiv = document.createElement('div');
-  msgDiv.className = 'msg ' + role;
-  if (role === 'system') {
-    msgDiv.innerText = content;
-  } else {
-    let renderBox = document.createElement('div');
-    renderBox.className = 'render-box';
-    renderBox.innerText = content;
-    msgDiv.appendChild(renderBox);
-  }
-  list.appendChild(msgDiv);
-  list.scrollTop = list.scrollHeight;
-}
-
-async function getAIResponse(userMsg) {
-  let api = DB.api;
-  if (!api.url || !api.key || !api.model) throw new Error('请先配置API');
-  let memory = getCurMemory();
-  let systemPrompt = `你是一个AI角色，名叫${DB.chars[DB.curChar]?.name}。\n`;
-  if (DB.user.persona) systemPrompt += `用户信息：${DB.user.name}，${DB.user.persona}\n`;
-  if (memory) systemPrompt += `长期记忆：\n${memory}\n`;
-  try {
-    let res = await fetch(api.url + '/chat/completions', {
+    const res = await fetch(config.api.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + api.key },
-      body: JSON.stringify({ model: api.model, messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMsg }
-      ], temperature: 0.7 })
-    });
-    if (!res.ok) {
-      if (res.status === 401) throw new Error('API Key 无效');
-      else if (res.status === 429) throw new Error('请求过于频繁，请稍后再试');
-      else if (res.status >= 500) throw new Error('服务器错误，请稍后重试');
-      else throw new Error(`API错误 (${res.status})`);
-    }
-    let data = await res.json();
-    return data.choices[0].message.content;
-  } catch (err) { throw err; }
-}
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.api.key}`
+      },
+      body: JSON.stringify({
+        model: config.api.model,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: txt }
+        ],
+        stream: true
+      })
+    })
 
-function clearChat() {
-  if (confirm('清空当前对话？')) {
-    document.getElementById('msg-list').innerHTML = '';
-    if (DB.settings.auto_save) {
-      let cid = DB.chars[DB.curChar]?.id;
-      if (cid) { DB.chats[cid] = []; saveDB(); }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    while(true){
+      const {done,value} = await reader.read()
+      if(done) break
+      const chunk = decoder.decode(value)
+      chunk.split('\n').forEach(line=>{
+        if(!line.startsWith('data: ')) return
+        const data = line.replace('data: ','').trim()
+        if(data=='[DONE]') return
+        try {
+          const j = JSON.parse(data)
+          const c = j.choices?.[0]?.delta?.content || ''
+          full += c
+          stream.textContent = full
+          chat_box.scrollTop = chat_box.scrollHeight
+        }catch(e){}
+      })
     }
+    saveChat()
+  } catch(e){
+    stream.textContent = 'API 错误：'+e.message
   }
 }
 
-function saveChatHistory() {
-  let list = document.getElementById('msg-list');
-  let msgs = [];
-  list.querySelectorAll('.msg').forEach(msg => {
-    let role = msg.classList.contains('user') ? 'user' : msg.classList.contains('ai') ? 'ai' : 'system';
-    let content = msg.querySelector('.render-box')?.innerText || msg.innerText;
-    msgs.push({ role, content });
-  });
-  let cid = DB.chars[DB.curChar]?.id;
-  if (cid) { DB.chats[cid] = msgs; saveDB(); }
+// 添加消息
+function addMsg(who,text){
+  const div = document.createElement('div')
+  div.className = 'msg '+who
+  const ava = who === 'ai' ? config.char.avatar : 'https://picsum.photos/200/200?random=10'
+  div.innerHTML = `<div class="avatar" style="background-image:url('${ava}')"></div>
+  <div class="bubble">${text}</div>`
+  chat_box.appendChild(div)
+  chat_box.scrollTop = chat_box.scrollHeight
 }
 
-// ==================== 工具函数 ====================
-function escapeHtml(unsafe) {
-  return String(unsafe).replace(/[&<>"']/g, function(m) {
-    if (m === '&') return '&amp;';
-    if (m === '<') return '&lt;';
-    if (m === '>') return '&gt;';
-    if (m === '"') return '&quot;';
-    return '&#039;';
-  });
+// 世界书
+function addWorld(){
+  const key = document.getElementById('w_key').value.trim()
+  const value = document.getElementById('w_value').value.trim()
+  const weight = parseInt(document.getElementById('w_weight').value)
+  const depth = parseInt(document.getElementById('w_depth').value)
+  const enabled = parseInt(document.getElementById('w_enabled').value)
+  if(!key||!value) return
+  config.world.push({key,value,weight,depth,enabled})
+  saveAll()
+  renderWorld()
+  document.getElementById('w_key').value=''
+  document.getElementById('w_value').value=''
+}
+function renderWorld(){
+  const list = document.getElementById('world_list')
+  list.innerHTML = config.world.map((w,i)=>`
+    <div class="world-item">
+      <div>${w.key}</div>
+      <div style="font-size:12px;color:#999">权${w.weight} 深${w.depth} ${w.enabled?'开':'关'}</div>
+    </div>
+  `).join('')
 }
 
-// 初始化所有列表
-function renderWorlds() { /* 已在前面定义，这里占位 */ }
-function renderRegexes() { /* 已在前面定义 */ }
-function renderPresets() { /* 已在前面定义 */ }
-function renderThemes() { /* 已在前面定义 */ }
+// 角色头像
+function pickAvatar(){
+  const i = document.createElement('input')
+  i.type='file'
+  i.accept='image/*'
+  i.onchange=e=>{
+    const f = e.target.files[0]
+    if(!f) return
+    const url = URL.createObjectURL(f)
+    config.char.avatar = url
+    document.getElementById('char_avatar').style.backgroundImage = `url(${url})`
+    saveAll()
+  }
+  i.click()
+}
+
+// 角色
+function saveChar(){
+  config.char.name = document.getElementById('char_name').value
+  config.char.persona = document.getElementById('char_persona').value
+  config.char.style = document.getElementById('char_style').value
+  config.char.story = document.getElementById('char_story').value
+  saveAll()
+  alert('已保存')
+}
+function exportChar(){
+  const blob = new Blob([JSON.stringify(config.char)],{type:'application/json'})
+  const a = document.createElement('a')
+  a.href=URL.createObjectURL(blob)
+  a.download=`${config.char.name}.json`
+  a.click()
+}
+function importChar(){
+  const i=document.createElement('input')
+  i.type='file'
+  i.accept='.json'
+  i.onchange=e=>{
+    const r=new FileReader()
+    r.onload=e=>{
+      config.char = JSON.parse(e.target.result)
+      saveAll()
+      loadChar()
+      alert('导入成功')
+    }
+    r.readAsText(e.target.files[0])
+  }
+  i.click()
+}
+
+// 记忆 / 提示词 / API
+function saveMemory(){
+  config.memory.user = document.getElementById('mem_user').value
+  config.memory.sum = document.getElementById('mem_sum').value
+  saveAll()
+  alert('已保存')
+}
+function savePrompt(){
+  config.prompt = document.getElementById('sys_prompt').value
+  saveAll()
+  alert('已保存')
+}
+function saveApi(){
+  config.api.url = document.getElementById('api_url').value
+  config.api.key = document.getElementById('api_key').value
+  config.api.model = document.getElementById('api_model').value
+  saveAll()
+  alert('API 已保存')
+}
+
+// 存储
+function saveAll(){
+  localStorage.setItem('SILLY_FULL', JSON.stringify(config))
+}
+function saveChat(){
+  localStorage.setItem('SILLY_CHAT_FULL', chat_box.innerHTML)
+}
+function clearChat(){
+  chat_box.innerHTML=''
+  localStorage.removeItem('SILLY_CHAT_FULL')
+  closeModal()
+}
+function exportAll(){
+  const blob=new Blob([JSON.stringify(config)],{type:'application/json'})
+  const a=document.createElement('a')
+  a.href=URL.createObjectURL(blob)
+  a.download='SillyAI_full.json'
+  a.click()
+}
+function exportChat(){
+  const text = chat_box.innerText
+  const blob = new Blob([text],{type:'text/plain'})
+  const a = document.createElement('a')
+  a.href=URL.createObjectURL(blob)
+  a.download='聊天记录.txt'
+  a.click()
+}
+
+// 弹窗
+function openModal(id){document.getElementById(id).classList.add('active')}
+function closeModal(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active'))}
+
+// 加载
+function loadAll(){
+  loadChar()
+  renderWorld()
+  document.getElementById('mem_user').value = config.memory.user
+  document.getElementById('mem_sum').value = config.memory.sum
+  document.getElementById('sys_prompt').value = config.prompt
+  document.getElementById('api_url').value = config.api.url
+  document.getElementById('api_key').value = config.api.key
+  document.getElementById('api_model').value = config.api.model
+  chat_box.innerHTML = localStorage.getItem('SILLY_CHAT_FULL') || ''
+}
+function loadChar(){
+  document.getElementById('char_name').value = config.char.name
+  document.getElementById('char_persona').value = config.char.persona
+  document.getElementById('char_style').value = config.char.style
+  document.getElementById('char_story').value = config.char.story
+  document.getElementById('char_avatar').style.backgroundImage = `url(${config.char.avatar})`
+}
+
+window.onload = loadAll
 </script>
 </body>
 </html>
