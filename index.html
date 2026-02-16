@@ -1244,6 +1244,14 @@
             .conversation-last {
                 font-size: 13px;
             }
+
+            /* 设置弹窗手机端适配 */
+            .wechat-settings-modal-content {
+                width: 95% !important;
+                max-width: 380px !important;
+                max-height: 85vh !important;
+                padding: 16px !important;
+            }
         }
 
         /* ==================== 平板和大屏适配 ==================== */
@@ -3032,8 +3040,8 @@
                 
                 // 检查API密钥是否存在
                 if (!apiKey) {
-                    console.log('缺少API密钥，使用模拟回复');
-                    return getMockReply();
+                    console.log('缺少API密钥');
+                    throw new Error('请先在设置中配置API密钥');
                 }
                 
                 // 构建消息数组
@@ -3091,43 +3099,21 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('API响应错误:', response.status, errorText);
+                    throw new Error(`API请求失败 (${response.status})，请检查配置`);
                 }
                 
                 const data = await response.json();
+                if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+                    throw new Error('API返回数据格式错误');
+                }
                 return data.choices[0].message.content;
             } catch (error) {
                 console.error("获取AI回复API调用失败：", error);
-                // 失败时使用模拟回复作为后备
-                return getMockReply();
+                // 不使用模拟回复，直接抛出错误让调用者处理
+                throw error;
             }
-        }
-        
-        // 获取模拟回复
-        function getMockReply() {
-            const replies = [
-                '你好！',
-                '我在呢',
-                '有什么可以帮你的吗？',
-                '好的，没问题',
-                '哈哈哈，有意思',
-                '我理解你的意思',
-                '谢谢你的分享',
-                '我也这么觉得',
-                '太棒了！',
-                '真的吗？',
-                '我同意你的看法',
-                '好主意！',
-                '你说得对',
-                '我明白了',
-                '没问题，随时可以',
-                '很高兴听到这个消息',
-                '太有趣了',
-                '我也是这么想的',
-                '好的，我知道了',
-                '谢谢你告诉我'
-            ];
-            return replies[Math.floor(Math.random() * replies.length)];
         }
         
         // 安全截取字符串，避免超长文本导致问题
@@ -3634,7 +3620,7 @@
                 const triggerBtn = document.getElementById('triggerReplyBtn');
                 const normalSendBtn = document.getElementById('normalSendBtn');
                 if (role.replyStrategy === 'manual') {
-                    triggerBtn.style.display = 'none';
+                    triggerBtn.style.display = 'inline-block';
                     normalSendBtn.style.display = 'inline-block';
                 } else {
                     triggerBtn.style.display = 'none';
@@ -5255,12 +5241,14 @@
                 modal.style.zIndex = '1000';
                 
                 const content = document.createElement('div');
+                content.className = 'wechat-settings-modal-content';
                 content.style.backgroundColor = 'white';
                 content.style.borderRadius = '12px';
                 content.style.width = '90%';
                 content.style.maxWidth = '400px';
                 content.style.maxHeight = '80%';
                 content.style.overflowY = 'auto';
+                content.style.padding = '20px';
                 content.innerHTML = html;
                 
                 modal.appendChild(content);
@@ -5674,12 +5662,14 @@
                 modal.style.zIndex = '1000';
                 
                 const content = document.createElement('div');
+                content.className = 'wechat-settings-modal-content';
                 content.style.backgroundColor = 'white';
                 content.style.borderRadius = '12px';
                 content.style.width = '90%';
                 content.style.maxWidth = '400px';
                 content.style.maxHeight = '80%';
                 content.style.overflowY = 'auto';
+                content.style.padding = '20px';
                 content.innerHTML = html;
                 
                 modal.appendChild(content);
@@ -5965,12 +5955,14 @@
                 modal.style.zIndex = '1000';
                 
                 const content = document.createElement('div');
+                content.className = 'wechat-settings-modal-content';
                 content.style.backgroundColor = 'white';
                 content.style.borderRadius = '12px';
                 content.style.width = '90%';
                 content.style.maxWidth = '400px';
                 content.style.maxHeight = '80%';
                 content.style.overflowY = 'auto';
+                content.style.padding = '20px';
                 content.innerHTML = html;
                 
                 modal.appendChild(content);
@@ -6180,34 +6172,66 @@
                 
                 // 显示加载状态
                 const testBtn = document.getElementById('wechatTestConnectionBtn');
-                const originalText = testBtn.textContent;
                 testBtn.textContent = '测试中...';
                 testBtn.disabled = true;
                 
-                // 调用后端API测试连接
-                const response = await fetch(API_BASE_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        platform: 'custom-openai',
-                        apiKey: apiKey,
-                        apiUrl: apiUrl,
-                        action: 'testConnection'
-                    })
-                });
-                
-                if (response.ok) {
-                    alert('连接成功！');
-                } else {
-                    const errorData = await response.json().catch(() => ({ error: '连接失败' }));
-                    alert(`连接失败：${errorData.error || '未知错误'}`);
+                try {
+                    let success = false;
+                    
+                    // 首先尝试直接测试连接（调用 /models 端点）
+                    try {
+                        const normalizedUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+                        const directResponse = await fetch(`${normalizedUrl}/models`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            mode: 'cors'
+                        });
+                        
+                        if (directResponse.ok) {
+                            success = true;
+                            console.log('直接测试连接成功');
+                        }
+                    } catch (directError) {
+                        console.log('直接测试失败，尝试后端方式', directError);
+                    }
+                    
+                    // 如果直接测试失败，使用后端方式
+                    if (!success) {
+                        const response = await fetch(API_BASE_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                platform: 'custom-openai',
+                                apiKey: apiKey,
+                                apiUrl: apiUrl,
+                                action: 'testConnection'
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            success = true;
+                        } else {
+                            const errorData = await response.json().catch(() => ({ error: '连接失败' }));
+                            throw new Error(errorData.error || '未知错误');
+                        }
+                    }
+                    
+                    if (success) {
+                        alert('连接成功！');
+                    }
+                    
+                } catch (fetchError) {
+                    console.error("测试连接失败：", fetchError);
+                    alert(`测试连接失败：${fetchError.message || '网络请求失败，请检查网络连接'}`);
                 }
-                
             } catch (error) {
                 console.error("测试连接失败：", error);
-                alert(`测试连接失败：${error.message}`);
+                alert(`测试连接失败：${error.message || '发生错误'}`);
             } finally {
                 const testBtn = document.getElementById('wechatTestConnectionBtn');
                 testBtn.textContent = '测试链接';
