@@ -3130,7 +3130,15 @@
                     messages.push({ role: 'user', content: message });
                 }
                 
-                // 4. 准备请求
+                // ============================================
+                // 关键优化：custom-openai平台直接连接，不经过Vercel
+                // ============================================
+                if (platform === 'custom-openai' && apiUrl) {
+                    addDebugLog('⚡ 使用直连模式（custom-openai）', 'info');
+                    return await fetchDirectCustomOpenAI(apiUrl, apiKey, model, messages);
+                }
+                
+                // 4. 其他平台：继续使用Vercel后端
                 const requestBody = {
                     platform: platform,
                     apiKey: apiKey,
@@ -3190,6 +3198,69 @@
                 
             } catch (err) {
                 addDebugLog('💥 失败: ' + err.message, 'error');
+                throw err;
+            }
+        }
+        
+        // custom-openai直连函数
+        async function fetchDirectCustomOpenAI(apiUrl, apiKey, model, messages) {
+            try {
+                const targetUrl = `${apiUrl}/chat/completions`;
+                addDebugLog('🔗 直连地址: ' + targetUrl, 'info');
+                
+                const requestBody = {
+                    model: model,
+                    messages: messages
+                };
+                
+                addDebugLog('📤 直连请求: 模型=' + model + ', 消息数=' + messages.length, 'info');
+                addDebugLog('⏳ 等待直连响应...', 'info');
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+                
+                const response = await fetch(targetUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(requestBody),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                addDebugLog('📥 直连状态码: ' + response.status, response.ok ? 'info' : 'error');
+                
+                if (!response.ok) {
+                    let errorText = '';
+                    try {
+                        errorText = await response.text();
+                        addDebugLog('❌ 直连错误: ' + errorText.substring(0, 200), 'error');
+                    } catch (e) {
+                        errorText = 'HTTP ' + response.status;
+                    }
+                    throw new Error('API请求失败: ' + response.status);
+                }
+                
+                const data = await response.json();
+                addDebugLog('✅ 直连响应成功', 'info');
+                
+                if (!data?.choices?.[0]?.message?.content) {
+                    addDebugLog('❌ 返回格式错误', 'error');
+                    throw new Error('返回数据格式错误');
+                }
+                
+                const reply = data.choices[0].message.content;
+                addDebugLog('🎉 直连成功: ' + reply.substring(0, 50) + '...', 'info');
+                return reply;
+                
+            } catch (err) {
+                addDebugLog('❌ 直连失败: ' + err.message, 'error');
+                if (err.name === 'AbortError') {
+                    throw new Error('请求超时，请重试');
+                }
                 throw err;
             }
         }
