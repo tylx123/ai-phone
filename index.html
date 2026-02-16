@@ -1423,8 +1423,9 @@
                         
                         <!-- 调试日志显示区域 -->
                         <div style="background: #1a1a2e; border-top: 1px solid #333;">
-                            <div style="text-align: center; padding: 8px; background: #16213e;">
+                            <div style="display: flex; justify-content: center; align-items: center; gap: 8px; padding: 8px; background: #16213e;">
                                 <button id="toggleDebugBtn" style="background: #0f3460; border: none; color: #e94560; font-size: 12px; cursor: pointer; padding: 6px 12px; border-radius: 15px;" onclick="toggleDebugPanel()">🔍 调试日志</button>
+                                <button id="clearDebugBtn" style="background: #e94560; border: none; color: white; font-size: 11px; cursor: pointer; padding: 4px 10px; border-radius: 12px;" onclick="clearDebugLog()">🗑️ 清空</button>
                             </div>
                             <div id="debugPanel" style="display: none; max-height: 200px; overflow-y: auto; padding: 10px; font-family: monospace; font-size: 11px; color: #00ff00;">
                                 <div id="debugLog"></div>
@@ -3060,6 +3061,14 @@
                 debugPanel.style.display = 'block';
             } else {
                 debugPanel.style.display = 'none';
+            }
+        }
+        
+        // 清空调试日志
+        function clearDebugLog() {
+            const debugLog = document.getElementById('debugLog');
+            if (debugLog) {
+                debugLog.innerHTML = '';
             }
         }
         
@@ -6202,7 +6211,7 @@
             }
         }
         
-        // 拉取微信模型
+        // 拉取微信模型 - 优化版，优先直连
         async function fetchWechatModels(modal) {
             try {
                 const apiUrl = document.getElementById('wechatApiUrlInput').value.trim();
@@ -6214,7 +6223,6 @@
                     return;
                 }
                 
-                // 显示加载状态
                 const fetchBtn = document.getElementById('wechatFetchModelsBtn');
                 fetchBtn.textContent = '拉取中...';
                 fetchBtn.disabled = true;
@@ -6222,36 +6230,44 @@
                 try {
                     let models = [];
                     
-                    // 首先尝试直接从API拉取
+                    addDebugLog('📥 开始拉取模型...', 'info');
+                    
+                    // 优先直接拉取
                     try {
                         const normalizedUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+                        addDebugLog('🔗 直连地址: ' + normalizedUrl + '/models', 'info');
+                        
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 30000);
+                        
                         const directResponse = await fetch(`${normalizedUrl}/models`, {
                             method: 'GET',
                             headers: {
                                 'Authorization': `Bearer ${apiKey}`,
                                 'Content-Type': 'application/json'
                             },
-                            mode: 'cors'
+                            signal: controller.signal
                         });
+                        
+                        clearTimeout(timeoutId);
+                        
+                        addDebugLog('📥 直连状态: ' + directResponse.status, directResponse.ok ? 'info' : 'error');
                         
                         if (directResponse.ok) {
                             const directData = await directResponse.json();
                             if (directData.data && directData.data.length > 0) {
                                 models = directData.data;
-                                console.log('直接拉取模型成功');
+                                addDebugLog('✅ 直连拉取成功: ' + models.length + ' 个模型', 'info');
                             }
                         }
                     } catch (directError) {
-                        console.log('直接拉取失败，尝试后端方式', directError);
-                    }
-                    
-                    // 如果直接拉取失败，使用后端
-                    if (models.length === 0) {
+                        addDebugLog('⚠️ 直连拉取失败: ' + directError.message, 'warning');
+                        addDebugLog('🔄 尝试后端方式...', 'info');
+                        
+                        // 直连失败，尝试后端
                         const response = await fetch(API_BASE_URL, {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 platform: 'custom-openai',
                                 apiKey: apiKey,
@@ -6261,19 +6277,20 @@
                         });
                         
                         if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
+                            throw new Error('后端请求失败: ' + response.status);
                         }
                         
                         const data = await response.json();
                         models = data.data || [];
+                        addDebugLog('✅ 后端拉取成功: ' + models.length + ' 个模型', 'info');
                     }
                     
                     if (models.length === 0) {
+                        addDebugLog('❌ 未获取到任何模型', 'error');
                         alert('未获取到任何模型');
                         return;
                     }
                     
-                    // 更新模型列表
                     const modelSelect = document.getElementById('wechatModelSelect');
                     modelSelect.innerHTML = '';
                     
@@ -6286,20 +6303,20 @@
                         modelIds.push(model.id);
                     });
                     
-                    // 保存模型列表到本地存储
                     const aiConfig = JSON.parse(localStorage.getItem('wechatAIConfig') || '{}');
                     aiConfig.fetchedModels = modelIds;
                     localStorage.setItem('wechatAIConfig', JSON.stringify(aiConfig));
                     
+                    addDebugLog('🎉 拉取完成: ' + models.length + ' 个模型', 'info');
                     alert(`成功拉取到 ${models.length} 个模型`);
                     
                 } catch (fetchError) {
-                    console.error("拉取模型失败：", fetchError);
-                    alert(`拉取模型失败：${fetchError.message || '网络请求失败，请检查网络连接'}`);
+                    addDebugLog('❌ 拉取失败: ' + fetchError.message, 'error');
+                    alert(`拉取模型失败：${fetchError.message}`);
                 }
             } catch (error) {
-                console.error("拉取模型失败：", error);
-                alert(`拉取模型失败：${error.message || '发生错误'}`);
+                addDebugLog('❌ 错误: ' + error.message, 'error');
+                alert(`拉取模型失败：${error.message}`);
             } finally {
                 const fetchBtn = document.getElementById('wechatFetchModelsBtn');
                 fetchBtn.textContent = '拉取模型';
@@ -6307,7 +6324,7 @@
             }
         }
         
-        // 测试微信连接
+        // 测试微信连接 - 优化版，优先直连
         async function testWechatConnection(modal) {
             try {
                 const apiUrl = document.getElementById('wechatApiUrlInput').value.trim();
@@ -6319,7 +6336,6 @@
                     return;
                 }
                 
-                // 显示加载状态
                 const testBtn = document.getElementById('wechatTestConnectionBtn');
                 testBtn.textContent = '测试中...';
                 testBtn.disabled = true;
@@ -6327,33 +6343,41 @@
                 try {
                     let success = false;
                     
-                    // 首先尝试直接测试连接（调用 /models 端点）
+                    addDebugLog('🔗 开始测试连接...', 'info');
+                    
+                    // 优先直接测试
                     try {
                         const normalizedUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+                        addDebugLog('🔗 直连地址: ' + normalizedUrl + '/models', 'info');
+                        
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 30000);
+                        
                         const directResponse = await fetch(`${normalizedUrl}/models`, {
                             method: 'GET',
                             headers: {
                                 'Authorization': `Bearer ${apiKey}`,
                                 'Content-Type': 'application/json'
                             },
-                            mode: 'cors'
+                            signal: controller.signal
                         });
+                        
+                        clearTimeout(timeoutId);
+                        
+                        addDebugLog('📥 直连状态: ' + directResponse.status, directResponse.ok ? 'info' : 'error');
                         
                         if (directResponse.ok) {
                             success = true;
-                            console.log('直接测试连接成功');
+                            addDebugLog('✅ 直连测试成功', 'info');
                         }
                     } catch (directError) {
-                        console.log('直接测试失败，尝试后端方式', directError);
-                    }
-                    
-                    // 如果直接测试失败，使用后端方式
-                    if (!success) {
+                        addDebugLog('⚠️ 直连测试失败: ' + directError.message, 'warning');
+                        addDebugLog('🔄 尝试后端方式...', 'info');
+                        
+                        // 直连失败，尝试后端
                         const response = await fetch(API_BASE_URL, {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 platform: 'custom-openai',
                                 apiKey: apiKey,
@@ -6364,6 +6388,7 @@
                         
                         if (response.ok) {
                             success = true;
+                            addDebugLog('✅ 后端测试成功', 'info');
                         } else {
                             const errorData = await response.json().catch(() => ({ error: '连接失败' }));
                             throw new Error(errorData.error || '未知错误');
@@ -6371,16 +6396,17 @@
                     }
                     
                     if (success) {
+                        addDebugLog('🎉 连接测试成功', 'info');
                         alert('连接成功！');
                     }
                     
                 } catch (fetchError) {
-                    console.error("测试连接失败：", fetchError);
-                    alert(`测试连接失败：${fetchError.message || '网络请求失败，请检查网络连接'}`);
+                    addDebugLog('❌ 测试失败: ' + fetchError.message, 'error');
+                    alert(`测试连接失败：${fetchError.message}`);
                 }
             } catch (error) {
-                console.error("测试连接失败：", error);
-                alert(`测试连接失败：${error.message || '发生错误'}`);
+                addDebugLog('❌ 错误: ' + error.message, 'error');
+                alert(`测试连接失败：${error.message}`);
             } finally {
                 const testBtn = document.getElementById('wechatTestConnectionBtn');
                 testBtn.textContent = '测试链接';
