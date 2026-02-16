@@ -1413,8 +1413,13 @@
                             </div>
                         </div>
                         
+                        <!-- 功能按钮面板收起按钮 -->
+                        <div style="text-align: center; padding: 5px; background: transparent;">
+                            <button id="toggleFunctionsBtn" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px; border-radius: 20px;" onclick="toggleChatFunctions()">▼</button>
+                        </div>
+                        
                         <!-- 功能按钮面板 -->
-                        <div class="chat-functions">
+                        <div class="chat-functions" id="chatFunctionsPanel">
                             <button class="chat-function-btn" onclick="showEmojiPanel()">
                                 <div class="icon">😊</div>
                                 <div class="text">表情</div>
@@ -4211,6 +4216,25 @@
             renderAllChatMessages();
         }
         
+        // 切换功能按钮面板的收起/展开
+        function toggleChatFunctions() {
+            try {
+                const panel = document.getElementById('chatFunctionsPanel');
+                const btn = document.getElementById('toggleFunctionsBtn');
+                if (panel && btn) {
+                    if (panel.style.display === 'none') {
+                        panel.style.display = 'flex';
+                        btn.textContent = '▼';
+                    } else {
+                        panel.style.display = 'none';
+                        btn.textContent = '▲';
+                    }
+                }
+            } catch (error) {
+                console.error("切换功能面板失败：", error);
+            }
+        }
+        
         // 保存角色设置
         function saveRoleSettings() {
             try {
@@ -6051,59 +6075,90 @@
                 
                 // 显示加载状态
                 const fetchBtn = document.getElementById('wechatFetchModelsBtn');
-                const originalText = fetchBtn.textContent;
                 fetchBtn.textContent = '拉取中...';
                 fetchBtn.disabled = true;
                 
-                // 调用后端API拉取模型
-                const response = await fetch(API_BASE_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        platform: 'custom-openai',
-                        apiKey: apiKey,
-                        apiUrl: apiUrl,
-                        action: 'fetchModels'
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                try {
+                    let models = [];
+                    
+                    // 首先尝试直接从API拉取
+                    try {
+                        const normalizedUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+                        const directResponse = await fetch(`${normalizedUrl}/models`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            mode: 'cors'
+                        });
+                        
+                        if (directResponse.ok) {
+                            const directData = await directResponse.json();
+                            if (directData.data && directData.data.length > 0) {
+                                models = directData.data;
+                                console.log('直接拉取模型成功');
+                            }
+                        }
+                    } catch (directError) {
+                        console.log('直接拉取失败，尝试后端方式', directError);
+                    }
+                    
+                    // 如果直接拉取失败，使用后端
+                    if (models.length === 0) {
+                        const response = await fetch(API_BASE_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                platform: 'custom-openai',
+                                apiKey: apiKey,
+                                apiUrl: apiUrl,
+                                action: 'fetchModels'
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        models = data.data || [];
+                    }
+                    
+                    if (models.length === 0) {
+                        alert('未获取到任何模型');
+                        return;
+                    }
+                    
+                    // 更新模型列表
+                    const modelSelect = document.getElementById('wechatModelSelect');
+                    modelSelect.innerHTML = '';
+                    
+                    const modelIds = [];
+                    models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        option.textContent = model.id;
+                        modelSelect.appendChild(option);
+                        modelIds.push(model.id);
+                    });
+                    
+                    // 保存模型列表到本地存储
+                    const aiConfig = JSON.parse(localStorage.getItem('wechatAIConfig') || '{}');
+                    aiConfig.fetchedModels = modelIds;
+                    localStorage.setItem('wechatAIConfig', JSON.stringify(aiConfig));
+                    
+                    alert(`成功拉取到 ${models.length} 个模型`);
+                    
+                } catch (fetchError) {
+                    console.error("拉取模型失败：", fetchError);
+                    alert(`拉取模型失败：${fetchError.message || '网络请求失败，请检查网络连接'}`);
                 }
-                
-                const data = await response.json();
-                const models = data.data || [];
-                
-                if (models.length === 0) {
-                    alert('未获取到任何模型');
-                    return;
-                }
-                
-                // 更新模型列表
-                const modelSelect = document.getElementById('wechatModelSelect');
-                modelSelect.innerHTML = '';
-                
-                const modelIds = [];
-                models.forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model.id;
-                    option.textContent = model.id;
-                    modelSelect.appendChild(option);
-                    modelIds.push(model.id);
-                });
-                
-                // 保存模型列表到本地存储
-                const aiConfig = JSON.parse(localStorage.getItem('wechatAIConfig') || '{}');
-                aiConfig.fetchedModels = modelIds;
-                localStorage.setItem('wechatAIConfig', JSON.stringify(aiConfig));
-                
-                alert(`成功拉取到 ${models.length} 个模型`);
-                
             } catch (error) {
                 console.error("拉取模型失败：", error);
-                alert(`拉取模型失败：${error.message}`);
+                alert(`拉取模型失败：${error.message || '发生错误'}`);
             } finally {
                 const fetchBtn = document.getElementById('wechatFetchModelsBtn');
                 fetchBtn.textContent = '拉取模型';
