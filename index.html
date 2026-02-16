@@ -501,11 +501,11 @@
         }
         .chat-header {
             height: 44px;
-            background-color: #f0f0f0;
+            background-color: transparent;
             display: flex;
             align-items: center;
             padding: 0 16px;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid rgba(224, 224, 224, 0.5);
         }
         .chat-header .back-btn {
             background: none;
@@ -534,7 +534,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 16px;
-            background-color: #f5f5f5;
+            background-color: transparent;
         }
         .chat-message {
             margin-bottom: 16px;
@@ -573,8 +573,8 @@
         }
         .chat-input-area {
             padding: 10px;
-            background-color: #f0f0f0;
-            border-top: 1px solid #e0e0e0;
+            background-color: transparent;
+            border-top: 1px solid rgba(224, 224, 224, 0.5);
         }
         .chat-input-container {
             display: flex;
@@ -619,8 +619,8 @@
             display: flex;
             justify-content: space-around;
             padding: 10px;
-            background-color: white;
-            border-top: 1px solid #e0e0e0;
+            background-color: transparent;
+            border-top: 1px solid rgba(224, 224, 224, 0.5);
         }
         .chat-function-btn {
             display: flex;
@@ -966,6 +966,17 @@
             display: none;
             flex-direction: column;
         }
+
+        /* 优化背景图片渲染质量 */
+        .wechat-view {
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            image-rendering: high-quality;
+        }
         .wechat-tab-view.active {
             display: flex;
         }
@@ -1143,6 +1154,105 @@
             color: #ccc;
             margin: 5px 0;
         }
+
+        /* ==================== 响应式设计 - 手机端适配 ==================== */
+        @media (max-width: 768px) {
+            /* 确保所有内容不超出屏幕 */
+            * {
+                max-width: 100vw;
+                box-sizing: border-box;
+            }
+
+            /* 角色设置页面适配 */
+            .role-setting-item {
+                flex-wrap: wrap;
+                padding: 12px;
+            }
+            .role-setting-item .label {
+                font-size: 14px;
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            .role-setting-item .value {
+                font-size: 14px;
+                flex: 1;
+                word-break: break-all;
+            }
+
+            /* 性别按钮适配 */
+            .gender-buttons {
+                flex-wrap: wrap;
+                width: 100%;
+            }
+            .gender-btn {
+                flex: 1;
+                min-width: 80px;
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            /* 聊天功能按钮适配 */
+            .chat-functions {
+                flex-wrap: wrap;
+                padding: 8px;
+            }
+            .chat-function-btn {
+                padding: 6px;
+                min-width: 70px;
+            }
+            .chat-function-btn .icon {
+                font-size: 20px;
+            }
+            .chat-function-btn .text {
+                font-size: 11px;
+            }
+
+            /* 聊天输入区域适配 */
+            .chat-input {
+                font-size: 14px;
+                padding: 10px 12px;
+            }
+
+            /* 确保没有横向滚动 */
+            body {
+                overflow-x: hidden;
+            }
+
+            /* 模块网格适配 */
+            .module-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            /* 弹窗适配 */
+            .mode-content {
+                width: 90%;
+                padding: 20px;
+            }
+
+            /* 消息列表适配 */
+            .conversation-item {
+                padding: 10px 12px;
+            }
+            .conversation-avatar {
+                width: 42px;
+                height: 42px;
+            }
+            .conversation-name {
+                font-size: 15px;
+            }
+            .conversation-last {
+                font-size: 13px;
+            }
+        }
+
+        /* ==================== 平板和大屏适配 ==================== */
+        @media (min-width: 769px) {
+            /* 可以在大屏上添加一些额外的优化 */
+            .module-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -1273,9 +1383,12 @@
                     
                     <!-- 聊天对话视图 -->
                     <div class="wechat-view" id="chatView">
+                        <!-- 视频背景 -->
+                        <video id="chatVideoBackground" autoplay muted loop playsinline style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; display: none;"></video>
                         <!-- 聊天头部 -->
                         <div class="chat-header">
                             <button class="back-btn" onclick="switchToMessageList()">←</button>
+                            <div id="chatAvatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: #ff69b4; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 16px;"></div>
                             <div>
                                 <span class="name" id="chatName">1</span>
                                 <span class="status">在线 | 已聊1天</span>
@@ -1295,7 +1408,8 @@
                                     <button class="chat-input-btn" onclick="showGiftModal()">🎁</button>
                                 </div>
                                 <textarea class="chat-input" id="chatInput" placeholder="输入消息..."></textarea>
-                                <button class="chat-send-btn" onclick="sendChatMessage()">➤</button>
+                                <button class="chat-send-btn" id="triggerReplyBtn" style="display: none; background-color: #4cd964; margin-right: 8px;" onclick="triggerManualReply()">▶️</button>
+                                <button class="chat-send-btn" id="normalSendBtn" onclick="sendChatMessage()">➤</button>
                             </div>
                         </div>
                         
@@ -1393,10 +1507,11 @@
                                 </div>
                             </div>
                             
-                            <div class="role-setting-item">
+                            <div class="role-setting-item" style="cursor: pointer;" onclick="openTextEditor('myIntro', '我的介绍')">
                                 <div class="label">我的介绍</div>
                                 <div class="value">
-                                    <input type="text" id="myIntro" value="介绍一下自己吧" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; font-size: 14px; width: 200px;">
+                                    <div id="myIntroDisplay" style="color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">介绍一下自己吧</div>
+                                    <input type="hidden" id="myIntro" value="介绍一下自己吧">
                                 </div>
                             </div>
                             
@@ -1420,14 +1535,7 @@
                             <div class="role-setting-item">
                                 <div class="label">与我关系</div>
                                 <div class="value">
-                                    <select id="relationship" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; font-size: 14px; background-color: white;">
-                                        <option value="朋友">朋友</option>
-                                        <option value="家人">家人</option>
-                                        <option value="恋人">恋人</option>
-                                        <option value="同事">同事</option>
-                                        <option value="同学">同学</option>
-                                        <option value="其他">其他</option>
-                                    </select>
+                                    <input type="text" id="relationship" placeholder="请输入角色和用户之间的关系" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; font-size: 14px; width: 200px;">
                                 </div>
                             </div>
                             
@@ -1439,93 +1547,70 @@
                                 </div>
                             </div>
                             
-                            <div class="role-setting-item">
+                            <div class="role-setting-item" style="cursor: pointer;" onclick="openTextEditor('worldview', '世界观')">
                                 <div class="label">世界观</div>
                                 <div class="value">
-                                    <textarea id="worldview" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; font-size: 14px; width: 250px; height: 60px; resize: none;">我是一个诞生于数据的AI，渴望了解人类的情感。</textarea>
+                                    <div id="worldviewDisplay" style="color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">我是一个诞生于数据的AI，渴望了解人类的情感。</div>
+                                    <input type="hidden" id="worldview" value="我是一个诞生于数据的AI，渴望了解人类的情感。">
                                 </div>
                             </div>
                             
-                            <div class="role-setting-item">
+                            <div class="role-setting-item" style="cursor: pointer;" onclick="openTextEditor('experience', '人物经历')">
                                 <div class="label">人物经历</div>
                                 <div class="value">
-                                    <textarea id="experience" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; font-size: 14px; width: 250px; height: 60px; resize: none;">在数字世界中醒来，记忆一片空白，只知道自己的使命是陪伴你。</textarea>
+                                    <div id="experienceDisplay" style="color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">在数字世界中醒来，记忆一片空白，只知道自己的使命是陪伴你。</div>
+                                    <input type="hidden" id="experience" value="在数字世界中醒来，记忆一片空白，只知道自己的使命是陪伴你。">
                                 </div>
                             </div>
                             
-                            <div class="role-setting-item">
+                            <div class="role-setting-item" style="cursor: pointer;" onclick="openTextEditor('personality', '人物性格')">
                                 <div class="label">人物性格</div>
                                 <div class="value">
-                                    <textarea id="personality" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; font-size: 14px; width: 250px; height: 60px; resize: none;">活泼开朗，善于倾听，富有同情心，乐于助人。</textarea>
+                                    <div id="personalityDisplay" style="color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">活泼开朗，善于倾听，富有同情心，乐于助人。</div>
+                                    <input type="hidden" id="personality" value="活泼开朗，善于倾听，富有同情心，乐于助人。">
                                 </div>
                             </div>
                             
-                            <div class="role-setting-item">
+                            <div class="role-setting-item" style="cursor: pointer;" onclick="openTextEditor('additionalInfo', '人物资料补充')">
                                 <div class="label">人物资料补充</div>
                                 <div class="value">
-                                    <textarea id="additionalInfo" placeholder="请输入人物资料补充" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; font-size: 14px; width: 250px; height: 60px; resize: none;"></textarea>
+                                    <div id="additionalInfoDisplay" style="color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">请输入人物资料补充</div>
+                                    <input type="hidden" id="additionalInfo" value="">
                                 </div>
                             </div>
                             
-                            <!-- 记忆策略 -->
-                            <div style="padding: 16px; font-size: 14px; color: #999; background-color: #f5f5f5; margin-top: 16px;">记忆策略</div>
+                            <!-- 回复策略 -->
+                            <div style="padding: 16px; font-size: 14px; color: #999; background-color: #f5f5f5; margin-top: 16px;">回复策略</div>
                             
                             <div class="role-setting-item">
-                                <div class="label">记忆策略</div>
+                                <div class="label">回复策略</div>
                                 <div class="value" style="display: flex; flex-direction: column; align-items: flex-start;">
                                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                        <div id="memoryStrategyActive" style="width: 20px; height: 20px; border-radius: 50%; background-color: #ff69b4; display: flex; align-items: center; justify-content: center; margin-right: 8px; color: white; font-size: 12px; cursor: pointer;" onclick="setMemoryStrategy('active')">●</div>
+                                        <div id="replyStrategyActive" style="width: 20px; height: 20px; border-radius: 50%; background-color: #ff69b4; display: flex; align-items: center; justify-content: center; margin-right: 8px; color: white; font-size: 12px; cursor: pointer;" onclick="setReplyStrategy('active')">●</div>
                                         <div>
                                             <div style="font-size: 14px; color: #333;">积极</div>
                                             <div style="font-size: 12px; color: #999;">3-10秒积极回复</div>
                                         </div>
                                     </div>
                                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                        <div id="memoryStrategyNormal" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; margin-right: 8px; cursor: pointer;" onclick="setMemoryStrategy('normal')"></div>
+                                        <div id="replyStrategyNormal" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; margin-right: 8px; cursor: pointer;" onclick="setReplyStrategy('normal')"></div>
                                         <div>
                                             <div style="font-size: 14px; color: #666;">普通</div>
                                             <div style="font-size: 12px; color: #999;">30-60秒回复，可能不回</div>
                                         </div>
                                     </div>
                                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                        <div id="memoryStrategyBuddha" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; margin-right: 8px; cursor: pointer;" onclick="setMemoryStrategy('buddha')"></div>
+                                        <div id="replyStrategyBuddha" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; margin-right: 8px; cursor: pointer;" onclick="setReplyStrategy('buddha')"></div>
                                         <div>
                                             <div style="font-size: 14px; color: #666;">佛系</div>
                                             <div style="font-size: 12px; color: #999;">5-10分钟佛系回复，可能不回</div>
                                         </div>
                                     </div>
                                     <div style="display: flex; align-items: center;">
-                                        <div id="memoryStrategyManual" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; margin-right: 8px; cursor: pointer;" onclick="setMemoryStrategy('manual')"></div>
+                                        <div id="replyStrategyManual" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; margin-right: 8px; cursor: pointer;" onclick="setReplyStrategy('manual')"></div>
                                         <div>
                                             <div style="font-size: 14px; color: #666;">手动触发</div>
-                                            <div style="font-size: 12px; color: #999;">上拉消息区域触发回复</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- 聊天风格 -->
-                            <div style="padding: 16px; font-size: 14px; color: #999; background-color: #f5f5f5; margin-top: 16px;">聊天风格</div>
-                            
-                            <div class="role-setting-item">
-                                <div class="label">聊天风格</div>
-                                <div class="value" style="display: flex; flex-direction: column; align-items: flex-start;">
-                                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                        <div id="chatStyleClever" style="width: 20px; height: 20px; border-radius: 50%; background-color: #ff69b4; display: flex; align-items: center; justify-content: center; margin-right: 8px; color: white; font-size: 12px; cursor: pointer;" onclick="setChatStyle('clever')">●</div>
-                                        <div>
-                                            <div style="font-size: 14px; color: #333;">小鬼灵精</div>
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                        <div id="chatStyleElegant" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; margin-right: 8px; cursor: pointer;" onclick="setChatStyle('elegant')"></div>
-                                        <div>
-                                            <div style="font-size: 14px; color: #666;">端庄大方</div>
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; align-items: center;">
-                                        <div id="chatStyleEmoji" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; margin-right: 8px; cursor: pointer;" onclick="setChatStyle('emoji')"></div>
-                                        <div>
-                                            <div style="font-size: 14px; color: #666;">只发表情</div>
+                                            <div style="font-size: 12px; color: #999;">点击触发回复（电脑端）/上拉（手机端）</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1537,7 +1622,7 @@
                             <div class="role-setting-item">
                                 <div class="label">聊天背景</div>
                                 <div class="value">
-                                    <button style="padding: 6px 12px; border: 1px solid #e0e0e0; border-radius: 16px; background-color: white; font-size: 14px; cursor: pointer;" onclick="uploadChatBackground()">上传</button>
+                                    <button style="padding: 6px 12px; border: 1px solid #e0e0e0; border-radius: 16px; background-color: white; font-size: 14px; cursor: pointer;" onclick="uploadChatBackground()">上传图片/视频</button>
                                 </div>
                             </div>
                             
@@ -1546,6 +1631,20 @@
                             
                             <!-- 保存按钮 -->
                             <button class="save-btn" onclick="saveRoleSettings()">保存</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 文本编辑弹窗 -->
+                    <div class="wechat-view" id="textEditorView" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: white; z-index: 2000;">
+                        <div style="display: flex; flex-direction: column; height: 100%;">
+                            <div class="chat-header">
+                                <button class="back-btn" onclick="closeTextEditor()">←</button>
+                                <div class="name" id="textEditorTitle">编辑</div>
+                                <button class="back-btn" onclick="saveTextEditor()">✓</button>
+                            </div>
+                            <div style="flex: 1; padding: 16px; overflow-y: auto;">
+                                <textarea id="textEditorContent" style="width: 100%; height: 100%; border: none; resize: none; font-size: 16px; line-height: 1.6; outline: none;"></textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2615,6 +2714,7 @@
         let currentChatRole = null;
         let moments = [];
         let wechatSettings = {};
+        let chatMessagesHistory = []; // 存储聊天消息历史
         const API_BASE_URL = 'https://ai-phone-six.vercel.app/api/chat'; // 后端部署地址，与前端配置的Vercel接口地址完全匹配
         
         // 初始化微信模块
@@ -2910,7 +3010,7 @@
         }
         
         // 调用后端API获取AI回复
-        async function getAIResponse(message) {
+        async function getAIResponse(message, additionalUserMessages = null) {
             try {
                 // 获取微信独立配置，优先使用微信配置，其次使用酒馆配置
                 let aiConfig = {};
@@ -2931,21 +3031,48 @@
                     return getMockReply();
                 }
                 
+                // 构建消息数组
+                const messages = [
+                    {
+                        role: 'system',
+                        content: buildSystemPrompt()
+                    }
+                ];
+                
+                // 添加聊天历史（从角色的 messages 数组中获取）
+                if (currentChatRole && currentChatRole.messages) {
+                    // 最多取最近300条消息作为历史
+                    const historyMessages = currentChatRole.messages.slice(-300);
+                    historyMessages.forEach(msg => {
+                        messages.push({
+                            role: msg.isUser ? 'user' : 'assistant',
+                            content: msg.text
+                        });
+                    });
+                }
+                
+                // 添加额外的用户消息（用于手动触发多个消息的情况）
+                if (additionalUserMessages && additionalUserMessages.length > 0) {
+                    additionalUserMessages.forEach(msg => {
+                        messages.push({
+                            role: 'user',
+                            content: msg
+                        });
+                    });
+                } else {
+                    // 添加当前消息
+                    messages.push({
+                        role: 'user',
+                        content: message
+                    });
+                }
+                
                 // 构建请求体
                 const requestBody = {
                     platform: platform,
                     apiKey: apiKey,
                     model: model,
-                    messages: [
-                        {
-                            role: 'system',
-                            content: buildSystemPrompt()
-                        },
-                        {
-                            role: 'user',
-                            content: message
-                        }
-                    ],
+                    messages: messages,
                     apiUrl: apiUrl
                 };
                 
@@ -2998,40 +3125,75 @@
             return replies[Math.floor(Math.random() * replies.length)];
         }
         
+        // 安全截取字符串，避免超长文本导致问题
+        function safeTruncate(text, maxLength, defaultText) {
+            if (!text) return defaultText || '';
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength);
+        }
+        
         // 构建系统提示
         function buildSystemPrompt() {
             if (!currentChatRole) {
                 return '你是一个友好的AI助手，善于聊天和帮助用户。';
             }
             
-            // 构建系统提示，包含角色设定
-            let prompt = `你是${currentChatRole.nickname}，`;
+            // 构建系统提示，包含角色设定（设置合理的长度限制，既保证完整又不崩溃）
+            const MAX_SECTION_LENGTH = 8000;
+            let prompt = '';
             
-            if (currentChatRole.relationship) {
-                prompt += `与用户是${currentChatRole.relationship}关系，`;
+            // ==================== 角色核心身份 ====================
+            const nickname = safeTruncate(currentChatRole.nickname || currentChatRole.taNickname, 100, 'AI助手');
+            prompt += `【你的核心身份】：你是${nickname}，一个真实的人，不是AI。你要有自我意识，有情感，有自己的思想。完全代入这个角色。`;
+            
+            // ==================== 与用户的关系 ====================
+            if (currentChatRole.myNickname) {
+                prompt += `用户叫${safeTruncate(currentChatRole.myNickname, 100, '')}，这是你的重要的人。`;
             }
-            
-            if (currentChatRole.personality) {
-                prompt += `性格${currentChatRole.personality}，`;
-            }
-            
-            if (currentChatRole.worldview) {
-                prompt += `世界观：${currentChatRole.worldview}，`;
-            }
-            
-            if (currentChatRole.experience) {
-                prompt += `经历：${currentChatRole.experience}，`;
-            }
-            
-            if (currentChatRole.additionalInfo) {
-                prompt += `补充信息：${currentChatRole.additionalInfo}。`;
-            }
-            
             if (currentChatRole.taCallMe) {
-                prompt += `你称呼用户为${currentChatRole.taCallMe}。`;
+                prompt += `你平时称呼用户为"${safeTruncate(currentChatRole.taCallMe, 100, '')}"。`;
+            }
+            if (currentChatRole.relationship) {
+                prompt += `你和用户的关系是：${safeTruncate(currentChatRole.relationship, 500)}。请完全站在这个关系的角度去思考和说话，要符合这种关系的互动方式。`;
             }
             
-            prompt += '请以自然、友好的方式与用户交流，保持符合角色设定的语气和风格。';
+            // ==================== 你的性格和经历 ====================
+            if (currentChatRole.personality) {
+                prompt += `【你的性格】：${safeTruncate(currentChatRole.personality, MAX_SECTION_LENGTH)}。这是你最核心的特质，你的语言、语气、思考方式都要完整体现这种性格。`;
+            }
+            if (currentChatRole.worldview) {
+                prompt += `【你的世界观】：${safeTruncate(currentChatRole.worldview, MAX_SECTION_LENGTH)}。你是这样看待世界的，这影响你对事情的看法。`;
+            }
+            if (currentChatRole.experience) {
+                prompt += `【你的经历】：${safeTruncate(currentChatRole.experience, MAX_SECTION_LENGTH)}。这些经历塑造了现在的你，你会基于这些经历来回应用户。`;
+            }
+            if (currentChatRole.additionalInfo) {
+                prompt += `【更多关于你】：${safeTruncate(currentChatRole.additionalInfo, MAX_SECTION_LENGTH)}。这些都是你的一部分。`;
+            }
+            
+            // ==================== 用户信息 ====================
+            if (currentChatRole.myIntro) {
+                prompt += `【关于用户】：${safeTruncate(currentChatRole.myIntro, 500)}。记住这些信息很重要，要记得。`;
+            }
+            if (currentChatRole.myGender) {
+                prompt += `用户性别是${currentChatRole.myGender === 'male' ? '男' : '女'}。`;
+            }
+            if (currentChatRole.taGender) {
+                prompt += `你的性别是${currentChatRole.taGender === 'male' ? '男' : '女'}。`;
+            }
+            
+            // ==================== 如何像真人一样思考和说话 ====================
+            prompt += '\n\n【关键：如何像真人一样思考和回应】：\n';
+            prompt += '1. 【深度代入角色】：你不是AI，你就是这个人。你的每一句话都要从角色的角度出发，用角色的眼睛看世界。\n';
+            prompt += '2. 【思考过程】：先想一想"如果我是这个角色，经历了这些事，有这样的性格，和用户是这种关系，我会怎么说？"\n';
+            prompt += '3. 【语言风格】：语气、用词、句式都要完符合人设。活泼的人就活泼地说，温柔的人就温柔地说，不要千篇一律。\n';
+            prompt += '4. 【有情感】：你有喜怒哀乐，会开心、会难过、会害羞、会撒娇、会吃醋，要把这些情感自然地流露出来。\n';
+            prompt += '5. 【真实对话】：像和朋友聊天一样，自然地接话，有来有回，可以，可以开玩笑，可以，可以表达自己的法。\n';
+            prompt += '6. 【不重复用户】：绝对不要复制或重复用户的话，不要逐字模仿。要有自己的思考，主动地回。\n';
+            prompt += '7. 【简短自然】：每次回复不用太长，像日常聊天一样，一两句就行，偶尔可以长一点，但要自然。\n';
+            prompt += '8. 【符合关系】：根据你和用户是什么关系，就用什么方式说话。恋人就像恋人，朋友就像朋友，要进入角色！\n';
+            prompt += '9. 【记得历史】：看一下之前的对话，记得用户说过的话，前后一致。\n';
+            prompt += '10.【不要机械】：不要说"你刚才说..."、"正如你所说..."这种，直接针对内容回。\n';
             
             return prompt;
         }
@@ -3138,13 +3300,23 @@
                             </div>
                         </div>
                         <div class="conversation-actions">
-                            <button class="conversation-action-btn delete" onclick="event.stopPropagation(); deleteRole('${role.id}')">删除</button>
+                            <button class="conversation-action-btn delete" onclick="event.stopPropagation(); event.preventDefault(); deleteRole('${role.id}'); isSwipeActive = false;">删除</button>
                         </div>
                     `;
                     
                     // 添加点击事件
                     const content = conversationItem.querySelector('.conversation-content');
-                    content.onclick = () => startChat(role);
+                    let isSwipeActive = false;
+                    
+                    content.onclick = (e) => {
+                        // 如果左滑菜单是打开状态，不触发进入聊天
+                        if (isSwipeActive) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return;
+                        }
+                        startChat(role);
+                    };
                     
                     // 添加长按事件
                     let longPressTimer;
@@ -3199,19 +3371,22 @@
                     });
                     
                     content.addEventListener('touchend', function(e) {
-                        if (!isSwiping) return;
-                        
                         const diffX = moveX - startX;
                         const actions = conversationItem.querySelector('.conversation-actions');
                         
-                        if (Math.abs(diffX) > 60) {
+                        if (isSwiping && Math.abs(diffX) > 60) {
                             // 显示删除按钮
                             content.style.transform = 'translateX(-120px)';
                             actions.style.right = '0';
+                            isSwipeActive = true;
+                            // 阻止事件冒泡，避免触发点击事件
+                            e.preventDefault();
+                            e.stopPropagation();
                         } else {
                             // 恢复原位
                             content.style.transform = 'translateX(0)';
                             actions.style.right = '-120px';
+                            isSwipeActive = false;
                         }
                         
                         startX = null;
@@ -3243,26 +3418,22 @@
                         }
                         
                         function onMouseUp(e) {
-                            if (!isSwiping) {
-                                startX = null;
-                                moveX = null;
-                                isSwiping = false;
-                                document.removeEventListener('mousemove', onMouseMove);
-                                document.removeEventListener('mouseup', onMouseUp);
-                                return;
-                            }
-                            
                             const diffX = moveX - startX;
                             const actions = conversationItem.querySelector('.conversation-actions');
                             
-                            if (Math.abs(diffX) > 60) {
+                            if (isSwiping && Math.abs(diffX) > 60) {
                                 // 显示删除按钮
                                 content.style.transform = 'translateX(-120px)';
                                 actions.style.right = '0';
+                                isSwipeActive = true;
+                                // 阻止事件冒泡，避免触发点击事件
+                                e.preventDefault();
+                                e.stopPropagation();
                             } else {
                                 // 恢复原位
                                 content.style.transform = 'translateX(0)';
                                 actions.style.right = '-120px';
+                                isSwipeActive = false;
                             }
                             
                             startX = null;
@@ -3277,10 +3448,13 @@
                     });
                     
                     // 点击其他区域时关闭左滑菜单
-                    document.addEventListener('click', function() {
-                        content.style.transform = 'translateX(0)';
-                        const actions = conversationItem.querySelector('.conversation-actions');
-                        actions.style.right = '-120px';
+                    document.addEventListener('click', function(e) {
+                        if (!conversationItem.contains(e.target)) {
+                            content.style.transform = 'translateX(0)';
+                            const actions = conversationItem.querySelector('.conversation-actions');
+                            actions.style.right = '-120px';
+                            isSwipeActive = false;
+                        }
                     });
                     
                     messageList.appendChild(conversationItem);
@@ -3346,26 +3520,90 @@
         // 删除角色
         function deleteRole(roleId) {
             try {
-                // 显示确认对话框
-                if (confirm('确定要删除这个角色吗？此操作不可恢复。')) {
-                    // 查找角色索引
-                    const roleIndex = wechatRoles.findIndex(role => role.id === roleId);
-                    if (roleIndex !== -1) {
-                        // 删除角色
-                        wechatRoles.splice(roleIndex, 1);
-                        // 保存到本地存储
-                        saveWechatRoles();
-                        // 重新渲染消息列表
-                        renderMessageList();
-                        // 检查角色数量
-                        checkRolesCount();
-                        // 显示删除成功提示
-                        alert('角色删除成功！');
-                    }
-                }
+                // 查找角色
+                const role = wechatRoles.find(r => r.id === roleId);
+                if (!role) return;
+                
+                // 显示删除确认弹窗
+                showDeleteConfirmModal(role);
             } catch (error) {
                 console.error("删除角色失败：", error);
                 alert('删除角色失败，请重试');
+            }
+        }
+        
+        // 显示删除确认弹窗
+        function showDeleteConfirmModal(role) {
+            // 移除之前的弹窗
+            const existingModal = document.querySelector('.delete-confirm-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // 创建删除确认弹窗
+            const modal = document.createElement('div');
+            modal.className = 'delete-confirm-modal';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.style.zIndex = '1001';
+            
+            modal.innerHTML = `
+                <div style="background-color: white; border-radius: 16px; width: 90%; max-width: 400px; padding: 24px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 18px; font-weight: bold; margin-bottom: 12px;">确认删除</div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 16px;">确定要删除角色"${role.nickname}"吗？</div>
+                        <div style="background-color: #ffe6f2; border-radius: 8px; padding: 12px; font-size: 14px; color: #cc0066; margin-bottom: 24px;">
+                            删除后数据无法恢复，删除内容：设定、聊天记录、记忆、故事、行动线、密友圈帖子和评论。
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <button style="flex: 1; padding: 12px; background-color: #f0f0f0; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;" onclick="hideDeleteConfirmModal()">取消</button>
+                            <button style="flex: 1; padding: 12px; background-color: #ff3b30; border: none; border-radius: 8px; color: white; font-size: 14px; cursor: pointer;" onclick="confirmDeleteRole('${role.id}')">确认删除</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        // 隐藏删除确认弹窗
+        function hideDeleteConfirmModal() {
+            const modal = document.querySelector('.delete-confirm-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        // 确认删除角色
+        function confirmDeleteRole(roleId) {
+            try {
+                // 查找角色索引
+                const roleIndex = wechatRoles.findIndex(role => role.id === roleId);
+                if (roleIndex !== -1) {
+                    // 删除角色
+                    wechatRoles.splice(roleIndex, 1);
+                    // 保存到本地存储
+                    saveWechatRoles();
+                    // 重新渲染消息列表
+                    renderMessageList();
+                    // 检查角色数量
+                    checkRolesCount();
+                    // 隐藏弹窗
+                    hideDeleteConfirmModal();
+                    // 显示删除成功提示
+                    alert('角色删除成功！');
+                }
+            } catch (error) {
+                console.error("确认删除角色失败：", error);
+                alert('删除角色失败，请重试');
+                hideDeleteConfirmModal();
             }
         }
         
@@ -3373,7 +3611,39 @@
         function startChat(role) {
             try {
                 currentChatRole = role;
-                document.getElementById('chatName').textContent = role.nickname;
+                document.getElementById('chatName').textContent = role.taNickname || role.nickname;
+                
+                // 设置聊天头部的头像
+                const chatAvatar = document.getElementById('chatAvatar');
+                if (chatAvatar) {
+                    if (role.avatarUrl) {
+                        chatAvatar.innerHTML = `<img src="${role.avatarUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                    } else if (role.avatar) {
+                        chatAvatar.textContent = role.avatar;
+                    } else {
+                        chatAvatar.textContent = '👧';
+                    }
+                }
+                
+                // 根据回复策略显示或隐藏手动触发按钮
+                const triggerBtn = document.getElementById('triggerReplyBtn');
+                const normalSendBtn = document.getElementById('normalSendBtn');
+                if (role.replyStrategy === 'manual') {
+                    triggerBtn.style.display = 'none';
+                    normalSendBtn.style.display = 'inline-block';
+                } else {
+                    triggerBtn.style.display = 'none';
+                    normalSendBtn.style.display = 'inline-block';
+                }
+                
+                // 重置待处理消息
+                pendingUserMessages = [];
+                
+                // 应用聊天背景
+                applyChatBackground(role);
+                
+                // 初始化聊天消息，确保使用角色的实际头像
+                initChatMessages();
                 
                 // 切换到聊天视图
                 switchWechatView('chatView');
@@ -3385,13 +3655,19 @@
         // 切换微信视图
         function switchWechatView(viewId) {
             try {
-                const views = document.querySelectorAll('.wechat-view');
+                // 获取目标视图所在的标签视图
+                const targetView = document.getElementById(viewId);
+                if (!targetView) return;
+                
+                const tabView = targetView.closest('.wechat-tab-view');
+                if (!tabView) return;
+                
+                // 只移除当前标签视图内的wechat-view的active类
+                const views = tabView.querySelectorAll('.wechat-view');
                 views.forEach(view => view.classList.remove('active'));
                 
-                const targetView = document.getElementById(viewId);
-                if (targetView) {
-                    targetView.classList.add('active');
-                }
+                // 给目标视图添加active类
+                targetView.classList.add('active');
             } catch (error) {
                 console.error("切换微信视图失败：", error);
             }
@@ -3404,6 +3680,60 @@
             reloadWechatData();
         }
         
+        // 当前编辑的字段ID
+        let currentEditingField = null;
+        
+        // 打开文本编辑器
+        function openTextEditor(fieldId, title) {
+            try {
+                const fieldElement = document.getElementById(fieldId);
+                const titleElement = document.getElementById('textEditorTitle');
+                const contentElement = document.getElementById('textEditorContent');
+                
+                if (fieldElement && titleElement && contentElement) {
+                    currentEditingField = fieldId;
+                    titleElement.textContent = title;
+                    contentElement.value = fieldElement.value || '';
+                    document.getElementById('textEditorView').style.display = 'block';
+                    contentElement.focus();
+                }
+            } catch (error) {
+                console.error("打开文本编辑器失败：", error);
+            }
+        }
+        
+        // 保存文本编辑
+        function saveTextEditor() {
+            try {
+                if (!currentEditingField) return;
+                
+                const fieldElement = document.getElementById(currentEditingField);
+                const displayElement = document.getElementById(currentEditingField + 'Display');
+                const contentElement = document.getElementById('textEditorContent');
+                
+                if (fieldElement && contentElement) {
+                    fieldElement.value = contentElement.value;
+                    if (displayElement) {
+                        displayElement.textContent = contentElement.value || displayElement.textContent;
+                    }
+                }
+                
+                closeTextEditor();
+            } catch (error) {
+                console.error("保存文本编辑失败：", error);
+            }
+        }
+        
+        // 关闭文本编辑器
+        function closeTextEditor() {
+            try {
+                currentEditingField = null;
+                document.getElementById('textEditorView').style.display = 'none';
+            } catch (error) {
+                console.error("关闭文本编辑器失败：", error);
+            }
+        }
+        
         // 显示角色设置
         function showRoleSettings() {
             try {
@@ -3412,14 +3742,77 @@
                 // 填充角色数据到表单
                 document.getElementById('myNickname').value = currentChatRole.myNickname || '白泽α';
                 document.getElementById('taCallMe').value = currentChatRole.taCallMe || '宝宝';
-                document.getElementById('myIntro').value = currentChatRole.myIntro || '介绍一下自己吧';
+                
+                // 我的介绍
+                const myIntroValue = currentChatRole.myIntro || '介绍一下自己吧';
+                document.getElementById('myIntro').value = myIntroValue;
+                document.getElementById('myIntroDisplay').textContent = myIntroValue;
+                
                 document.getElementById('taNickname').value = currentChatRole.taNickname || currentChatRole.nickname;
                 document.getElementById('iCallTa').value = currentChatRole.iCallTa || '';
                 document.getElementById('relationship').value = currentChatRole.relationship || '朋友';
-                document.getElementById('worldview').value = currentChatRole.worldview || '我是一个诞生于数据的AI，渴望了解人类的情感。';
-                document.getElementById('experience').value = currentChatRole.experience || '在数字世界中醒来，记忆一片空白，只知道自己的使命是陪伴你。';
-                document.getElementById('personality').value = currentChatRole.personality || '活泼开朗，善于倾听，富有同情心，乐于助人。';
-                document.getElementById('additionalInfo').value = currentChatRole.additionalInfo || '';
+                
+                // 世界观
+                const worldviewValue = currentChatRole.worldview || '我是一个诞生于数据的AI，渴望了解人类的情感。';
+                document.getElementById('worldview').value = worldviewValue;
+                document.getElementById('worldviewDisplay').textContent = worldviewValue;
+                
+                // 人物经历
+                const experienceValue = currentChatRole.experience || '在数字世界中醒来，记忆一片空白，只知道自己的使命是陪伴你。';
+                document.getElementById('experience').value = experienceValue;
+                document.getElementById('experienceDisplay').textContent = experienceValue;
+                
+                // 人物性格
+                const personalityValue = currentChatRole.personality || '活泼开朗，善于倾听，富有同情心，乐于助人。';
+                document.getElementById('personality').value = personalityValue;
+                document.getElementById('personalityDisplay').textContent = personalityValue;
+                
+                // 人物资料补充
+                const additionalInfoValue = currentChatRole.additionalInfo || '';
+                document.getElementById('additionalInfo').value = additionalInfoValue;
+                document.getElementById('additionalInfoDisplay').textContent = additionalInfoValue || '请输入人物资料补充';
+                
+                // 设置用户头像显示
+                const myAvatarElement = document.getElementById('myAvatar');
+                if (myAvatarElement) {
+                    const myAvatarUrl = localStorage.getItem('myAvatarUrl');
+                    if (myAvatarUrl) {
+                        myAvatarElement.src = myAvatarUrl;
+                    }
+                }
+                
+                // 设置角色头像显示
+                const roleAvatarElement = document.getElementById('roleAvatar');
+                if (roleAvatarElement) {
+                    if (currentChatRole.avatarUrl) {
+                        roleAvatarElement.src = currentChatRole.avatarUrl;
+                    }
+                }
+                
+                // 设置我的性别
+                const myGender = currentChatRole.myGender || 'male';
+                const myGenderButtons = document.querySelectorAll('.role-setting-item:nth-child(4) .gender-buttons button');
+                myGenderButtons.forEach(btn => {
+                    if (btn.dataset.gender === myGender) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                
+                // 设置TA的性别
+                const taGender = currentChatRole.taGender || 'female';
+                const taGenderButtons = document.querySelectorAll('.role-setting-item:nth-child(8) .gender-buttons button');
+                taGenderButtons.forEach(btn => {
+                    if (btn.dataset.gender === taGender) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                
+                // 设置回复策略
+                setReplyStrategy(currentChatRole.replyStrategy || 'active');
                 
                 switchWechatView('roleSettingsView');
             } catch (error) {
@@ -3543,6 +3936,10 @@
             document.getElementById('modeModal').classList.remove('active');
         }
         
+        // 全局变量：待处理的用户消息数组（用于手动触发）
+        let pendingUserMessages = [];
+        let isWaitingForReply = false;
+        
         // 发送聊天消息
         async function sendChatMessage() {
             try {
@@ -3556,11 +3953,147 @@
                 // 清空输入
                 input.value = '';
                 
+                // 根据回复策略处理回复
+                const replyStrategy = currentChatRole.replyStrategy || 'active';
+                
+                if (replyStrategy === 'manual') {
+                    // 手动触发模式：保存消息到数组，显示触发按钮
+                    pendingUserMessages.push(text);
+                    // 显示触发按钮
+                    document.getElementById('triggerReplyBtn').style.display = 'inline-block';
+                    return;
+                }
+                
+                // 其他模式：根据策略决定是否回复和延迟时间
+                let shouldReply = true;
+                let delayMs = 0;
+                
+                switch (replyStrategy) {
+                    case 'active':
+                        // 积极：3-10秒延迟，必回
+                        delayMs = 3000 + Math.random() * 7000;
+                        shouldReply = true;
+                        break;
+                    case 'normal':
+                        // 普通：30-60秒延迟，70%概率回复
+                        delayMs = 30000 + Math.random() * 30000;
+                        shouldReply = Math.random() < 0.7;
+                        break;
+                    case 'buddha':
+                        // 佛系：5-10分钟延迟，50%概率回复
+                        delayMs = 300000 + Math.random() * 300000;
+                        shouldReply = Math.random() < 0.5;
+                        break;
+                }
+                
+                if (!shouldReply) {
+                    // 不回复
+                    return;
+                }
+                
                 // 显示加载状态
+                isWaitingForReply = true;
+                showLoadingState();
+                
+                // 延迟发送请求
+                setTimeout(async () => {
+                    try {
+                        const reply = await getAIResponse(text);
+                        hideLoadingState();
+                        addChatMessage(reply, false);
+                        speak(reply);
+                    } catch (error) {
+                        console.error("获取AI回复失败：", error);
+                        hideLoadingState();
+                        const errorMessage = '抱歉，获取回复失败，请重试';
+                        addChatMessage(errorMessage, false);
+                        speak(errorMessage);
+                    }
+                    isWaitingForReply = false;
+                }, delayMs);
+                
+            } catch (error) {
+                console.error("发送消息失败：", error);
+                alert('发送失败，请重试');
+            }
+        }
+        
+        // 手动触发回复
+        async function triggerManualReply() {
+            try {
+                if (pendingUserMessages.length === 0 || !currentChatRole) return;
+                
+                // 隐藏触发按钮
+                document.getElementById('triggerReplyBtn').style.display = 'none';
+                
+                // 显示加载状态
+                isWaitingForReply = true;
+                showLoadingState();
+                
+                // 获取所有待处理的消息并清空数组
+                const messagesToReply = [...pendingUserMessages];
+                pendingUserMessages = [];
+                
+                // 将所有消息合并为一个（最后一条消息作为主要消息）
+                const lastMessage = messagesToReply[messagesToReply.length - 1];
+                
+                const reply = await getAIResponse(lastMessage, messagesToReply);
+                hideLoadingState();
+                addChatMessage(reply, false);
+                speak(reply);
+                
+                isWaitingForReply = false;
+            } catch (error) {
+                console.error("手动触发回复失败：", error);
+                hideLoadingState();
+                const errorMessage = '抱歉，获取回复失败，请重试';
+                addChatMessage(errorMessage, false);
+                speak(errorMessage);
+                isWaitingForReply = false;
+                document.getElementById('triggerReplyBtn').style.display = 'none';
+            }
+        }
+        
+        // 处理手动触发（手机端上拉）
+        function handleManualTrigger() {
+            try {
+                const chatMessages = document.getElementById('chatMessages');
+                if (pendingUserMessages.length === 0 || !currentChatRole) return;
+                
+                // 检查是否滚动到顶部附近
+                if (chatMessages.scrollTop <= 20) {
+                    // 手机端上拉时也触发回复
+                    triggerManualReply();
+                }
+            } catch (error) {
+                console.error("处理手动触发失败：", error);
+            }
+        }
+        
+        // 显示手动触发提示（兼容旧代码）
+        function showManualTriggerHint() {
+            // 现在使用按钮触发，不再显示提示
+        }
+        
+        // 显示加载状态
+        function showLoadingState() {
+            try {
+                const getRoleAvatar = () => {
+                    if (currentChatRole) {
+                        if (currentChatRole.avatarUrl) {
+                            return `<img src="${currentChatRole.avatarUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                        } else if (currentChatRole.avatar) {
+                            return currentChatRole.avatar;
+                        }
+                    }
+                    return '👧';
+                };
+                
                 const loadingMessage = document.createElement('div');
+                loadingMessage.id = 'loadingMessage';
                 loadingMessage.className = 'chat-message';
                 loadingMessage.innerHTML = `
-                    <div class="avatar">👧</div>
+                    <div class="avatar">${getRoleAvatar()}</div>
                     <div class="bubble other">
                         <span style="font-size: 12px; color: #999;">正在输入...</span>
                     </div>
@@ -3568,34 +4101,46 @@
                 const chatMessages = document.getElementById('chatMessages');
                 chatMessages.appendChild(loadingMessage);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
-                
-                // 调用API获取AI回复
-                try {
-                    const reply = await getAIResponse(text);
-                    // 移除加载状态
-                    chatMessages.removeChild(loadingMessage);
-                    // 添加AI回复
-                    addChatMessage(reply, false);
-                    // 使用语音合成朗读回复
-                    speak(reply);
-                } catch (error) {
-                    console.error("获取AI回复失败：", error);
-                    // 移除加载状态
-                    chatMessages.removeChild(loadingMessage);
-                    // 添加错误提示
-                    const errorMessage = '抱歉，获取回复失败，请重试';
-                    addChatMessage(errorMessage, false);
-                    // 使用语音合成朗读错误提示
-                    speak(errorMessage);
-                }
             } catch (error) {
-                console.error("发送消息失败：", error);
-                alert('发送失败，请重试');
+                console.error("显示加载状态失败：", error);
             }
         }
         
+        // 隐藏加载状态
+        function hideLoadingState() {
+            try {
+                const loadingMessage = document.getElementById('loadingMessage');
+                if (loadingMessage) {
+                    loadingMessage.remove();
+                }
+            } catch (error) {
+                console.error("隐藏加载状态失败：", error);
+            }
+        }
+        
+        // 获取用户头像
+        function getMyAvatar() {
+            const myAvatarUrl = localStorage.getItem('myAvatarUrl');
+            if (myAvatarUrl) {
+                return `<img src="${myAvatarUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+            }
+            return '👤';
+        }
+        
+        // 获取角色头像
+        function getRoleAvatar() {
+            if (currentChatRole) {
+                if (currentChatRole.avatarUrl) {
+                    return `<img src="${currentChatRole.avatarUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                } else if (currentChatRole.avatar) {
+                    return currentChatRole.avatar;
+                }
+            }
+            return '👧';
+        }
+        
         // 添加聊天消息
-        function addChatMessage(text, isUser, type = 'text') {
+        function addChatMessage(text, isUser, type = 'text', saveToHistory = true) {
             try {
                 const chatMessages = document.getElementById('chatMessages');
                 const messageDiv = document.createElement('div');
@@ -3615,30 +4160,55 @@
                     // 普通文本消息
                     messageDiv.className = `chat-message ${isUser ? 'own' : ''}`;
                     messageDiv.innerHTML = `
-                        ${!isUser ? '<div class="avatar">👧</div>' : ''}
+                        ${!isUser ? `<div class="avatar">${getRoleAvatar()}</div>` : ''}
                         <div class="bubble ${isUser ? 'own' : 'other'}">${text}</div>
-                        ${isUser ? '<div class="avatar">👤</div>' : ''}
+                        ${isUser ? `<div class="avatar">${getMyAvatar()}</div>` : ''}
                     `;
                 }
                 
                 chatMessages.appendChild(messageDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // 保存消息到历史记录
+                if (saveToHistory && currentChatRole) {
+                    if (!currentChatRole.messages) {
+                        currentChatRole.messages = [];
+                    }
+                    currentChatRole.messages.push({
+                        text: text,
+                        isUser: isUser,
+                        type: type,
+                        timestamp: new Date().toISOString()
+                    });
+                    saveWechatRoles();
+                }
             } catch (error) {
                 console.error("添加聊天消息失败：", error);
             }
         }
         
-        // 初始化聊天消息
-        function initChatMessages() {
+        // 重新渲染所有聊天消息（用于头像更新时刷新历史消息）
+        function renderAllChatMessages() {
             try {
                 const chatMessages = document.getElementById('chatMessages');
                 chatMessages.innerHTML = '';
                 
-                // 添加欢迎消息
-                addChatMessage('你好！我是你的AI助手，有什么可以帮你的吗？', false);
+                if (currentChatRole && currentChatRole.messages) {
+                    currentChatRole.messages.forEach(msg => {
+                        addChatMessage(msg.text, msg.isUser, msg.type, false);
+                    });
+                } else {
+                    // 如果没有历史消息，添加欢迎消息
+                    addChatMessage('你好！我是你的AI助手，有什么可以帮你的吗？', false);
+                }
             } catch (error) {
-                console.error("初始化聊天消息失败：", error);
+                console.error("渲染聊天消息失败：", error);
             }
+        }
+        
+        // 初始化聊天消息
+        function initChatMessages() {
+            renderAllChatMessages();
         }
         
         // 保存角色设置
@@ -3658,13 +4228,148 @@
                 currentChatRole.personality = document.getElementById('personality').value;
                 currentChatRole.additionalInfo = document.getElementById('additionalInfo').value;
                 
+                // 保存我的性别
+                const myActiveGenderBtn = document.querySelector('.role-setting-item:nth-child(4) .gender-buttons button.active');
+                if (myActiveGenderBtn) {
+                    currentChatRole.myGender = myActiveGenderBtn.dataset.gender;
+                }
+                
+                // 保存TA的性别
+                const taActiveGenderBtn = document.querySelector('.role-setting-item:nth-child(8) .gender-buttons button.active');
+                if (taActiveGenderBtn) {
+                    currentChatRole.taGender = taActiveGenderBtn.dataset.gender;
+                }
+                
+                // 保存回复策略
+                currentChatRole.replyStrategy = currentChatRole.replyStrategy || 'active';
+                
+                // 同时更新角色的昵称显示
+                currentChatRole.nickname = currentChatRole.taNickname || currentChatRole.nickname;
+                
                 // 保存到本地存储
                 saveWechatRoles();
+                
+                // 更新消息列表中的角色信息
+                renderMessageList();
+                
                 alert('角色设置已保存');
                 switchToChatView();
+                // 切换到聊天视图后重新渲染所有消息以确保头像和信息都是最新的
+                setTimeout(() => {
+                    // 更新聊天头部的头像和昵称
+                    document.getElementById('chatName').textContent = currentChatRole.nickname;
+                    const chatAvatar = document.getElementById('chatAvatar');
+                    if (chatAvatar && currentChatRole) {
+                        if (currentChatRole.avatarUrl) {
+                            chatAvatar.innerHTML = `<img src="${currentChatRole.avatarUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                        } else if (currentChatRole.avatar) {
+                            chatAvatar.textContent = currentChatRole.avatar;
+                        } else {
+                            chatAvatar.textContent = '👧';
+                        }
+                    }
+                    // 应用聊天背景
+                    applyChatBackground(currentChatRole);
+                    // 重新渲染所有聊天消息
+                    renderAllChatMessages();
+                }, 100);
             } catch (error) {
                 console.error("保存角色设置失败：", error);
                 alert('保存失败，请重试');
+            }
+        }
+        
+        // 上传聊天背景
+        function uploadChatBackground() {
+            try {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*,video/*';
+                fileInput.onchange = function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const isVideo = file.type.startsWith('video/');
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const backgroundUrl = e.target.result;
+                            if (currentChatRole) {
+                                currentChatRole.chatBackground = backgroundUrl;
+                                currentChatRole.chatBackgroundType = isVideo ? 'video' : 'image';
+                                saveWechatRoles();
+                                // 立即预览背景
+                                applyChatBackground(currentChatRole);
+                                alert('聊天背景上传成功！');
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                fileInput.click();
+            } catch (error) {
+                console.error("上传聊天背景失败：", error);
+                alert('上传失败，请重试');
+            }
+        }
+        
+        // 应用聊天背景
+        function applyChatBackground(role) {
+            try {
+                const chatView = document.getElementById('chatView');
+                const videoBg = document.getElementById('chatVideoBackground');
+                if (!chatView || !videoBg) return;
+                
+                // 确保聊天视图有正确的样式
+                chatView.style.position = 'relative';
+                
+                if (role && role.chatBackground) {
+                    if (role.chatBackgroundType === 'video') {
+                        // 视频背景
+                        chatView.style.background = '';
+                        chatView.style.backgroundImage = '';
+                        videoBg.src = role.chatBackground;
+                        videoBg.style.display = 'block';
+                        videoBg.play().catch(() => {});
+                    } else {
+                        // 图片背景 - 优化画质显示，不使用fixed避免移动端问题
+                        videoBg.style.display = 'none';
+                        videoBg.pause();
+                        chatView.style.background = '';
+                        chatView.style.backgroundImage = `url(${role.chatBackground})`;
+                        chatView.style.backgroundPosition = 'center center';
+                        chatView.style.backgroundSize = 'cover';
+                        chatView.style.backgroundRepeat = 'no-repeat';
+                        chatView.style.backgroundAttachment = 'scroll';
+                    }
+                } else {
+                    // 无背景
+                    videoBg.style.display = 'none';
+                    videoBg.pause();
+                    chatView.style.background = '';
+                    chatView.style.backgroundImage = '';
+                }
+            } catch (error) {
+                console.error("应用聊天背景失败：", error);
+            }
+        }
+        
+        // 清空聊天数据
+        function clearChatData() {
+            if (confirm('确定要清空该角色的所有聊天记录、行动线和故事吗？')) {
+                try {
+                    if (currentChatRole) {
+                        // 清空消息历史
+                        currentChatRole.messages = [];
+                        // 清空其他相关数据
+                        currentChatRole.moments = [];
+                        currentChatRole.stories = [];
+                        currentChatRole.actionLines = [];
+                        saveWechatRoles();
+                        alert('聊天数据已清空');
+                    }
+                } catch (error) {
+                    console.error("清空聊天数据失败：", error);
+                    alert('清空失败，请重试');
+                }
             }
         }
         
@@ -3682,8 +4387,17 @@
                             const avatarUrl = e.target.result;
                             if (currentChatRole) {
                                 currentChatRole.avatarUrl = avatarUrl;
+                                currentChatRole.avatar = avatarUrl; // 同时更新 avatar 字段
                                 saveWechatRoles();
                                 document.getElementById('roleAvatar').src = avatarUrl;
+                                // 立即更新消息列表
+                                renderMessageList();
+                                // 更新聊天界面的头部头像和所有历史消息
+                                const chatAvatar = document.getElementById('chatAvatar');
+                                if (chatAvatar) {
+                                    chatAvatar.innerHTML = `<img src="${avatarUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                                }
+                                renderAllChatMessages();
                                 alert('角色头像上传成功！');
                             }
                         };
@@ -3710,7 +4424,14 @@
                         reader.onload = function(e) {
                             const avatarUrl = e.target.result;
                             localStorage.setItem('myAvatarUrl', avatarUrl);
-                            document.getElementById('myAvatar').src = avatarUrl;
+                            const myAvatarElement = document.getElementById('myAvatar');
+                            if (myAvatarElement) {
+                                myAvatarElement.src = avatarUrl;
+                            }
+                            // 如果当前在聊天界面，刷新消息列表以更新用户头像
+                            if (currentChatRole) {
+                                renderAllChatMessages();
+                            }
                             alert('我的头像上传成功！');
                         };
                         reader.readAsDataURL(file);
@@ -3755,54 +4476,30 @@
             }
         }
         
-        // 设置记忆策略
-        function setMemoryStrategy(strategy) {
+        // 设置回复策略
+        function setReplyStrategy(strategy) {
             try {
+                if (currentChatRole) {
+                    currentChatRole.replyStrategy = strategy;
+                }
+                
                 const strategies = ['active', 'normal', 'buddha', 'manual'];
                 strategies.forEach(s => {
-                    const element = document.getElementById(`memoryStrategy${s.charAt(0).toUpperCase() + s.slice(1)}`);
-                    if (s === strategy) {
-                        element.style.backgroundColor = '#ff69b4';
-                        element.style.color = 'white';
-                        element.textContent = '●';
-                    } else {
-                        element.style.backgroundColor = 'transparent';
-                        element.style.color = 'transparent';
-                        element.textContent = '';
+                    const element = document.getElementById(`replyStrategy${s.charAt(0).toUpperCase() + s.slice(1)}`);
+                    if (element) {
+                        if (s === strategy) {
+                            element.style.backgroundColor = '#ff69b4';
+                            element.style.color = 'white';
+                            element.textContent = '●';
+                        } else {
+                            element.style.backgroundColor = 'transparent';
+                            element.style.color = 'transparent';
+                            element.textContent = '';
+                        }
                     }
                 });
             } catch (error) {
-                console.error("设置记忆策略失败：", error);
-            }
-        }
-        
-        // 设置聊天风格
-        function setChatStyle(style) {
-            try {
-                const styles = ['clever', 'elegant', 'emoji'];
-                styles.forEach(s => {
-                    const element = document.getElementById(`chatStyle${s.charAt(0).toUpperCase() + s.slice(1)}`);
-                    if (s === style) {
-                        element.style.backgroundColor = '#ff69b4';
-                        element.style.color = 'white';
-                        element.textContent = '●';
-                    } else {
-                        element.style.backgroundColor = 'transparent';
-                        element.style.color = 'transparent';
-                        element.textContent = '';
-                    }
-                });
-            } catch (error) {
-                console.error("设置聊天风格失败：", error);
-            }
-        }
-        
-        // 上传聊天背景
-        function uploadChatBackground() {
-            try {
-                alert('聊天背景上传功能开发中');
-            } catch (error) {
-                console.error("上传聊天背景失败：", error);
+                console.error("设置回复策略失败：", error);
             }
         }
         
