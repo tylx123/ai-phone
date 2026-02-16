@@ -373,6 +373,7 @@
             border-bottom: 1px solid #e0e0e0;
             cursor: pointer;
             transition: background-color 0.2s;
+            position: relative;
         }
         .conversation-item:hover {
             background-color: #f5f5f5;
@@ -413,6 +414,83 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        .delete-role-btn {
+            background-color: rgba(255, 59, 48, 0.1);
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            color: #ff3b30;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            display: none;
+        }
+        .delete-role-btn:hover {
+            background-color: rgba(255, 59, 48, 0.2);
+            transform: scale(1.1);
+        }
+        
+        /* 长按菜单样式 */
+        .long-press-menu {
+            position: fixed;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: none;
+        }
+        .long-press-menu-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .long-press-menu-item:last-child {
+            border-bottom: none;
+            border-radius: 0 0 8px 8px;
+        }
+        .long-press-menu-item.delete {
+            color: #ff3b30;
+        }
+        
+        /* 左滑删除样式 */
+        .conversation-item {
+            position: relative;
+            overflow: hidden;
+        }
+        .conversation-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            background-color: white;
+            transition: transform 0.3s ease;
+        }
+        .conversation-actions {
+            position: absolute;
+            top: 0;
+            right: -120px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            transition: right 0.3s ease;
+        }
+        .conversation-action-btn {
+            padding: 12px 16px;
+            border: none;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .conversation-action-btn.delete {
+            background-color: #ff3b30;
         }
         
         /* 聊天对话视图 */
@@ -2537,7 +2615,7 @@
         let currentChatRole = null;
         let moments = [];
         let wechatSettings = {};
-        const API_BASE_URL = 'https://ai-phone.vercel.app/api/handler'; // 后端部署地址，需要根据实际部署情况修改
+        const API_BASE_URL = 'https://ai-phone-six.vercel.app/api/chat'; // 后端部署地址，与前端配置的Vercel接口地址完全匹配
         
         // 初始化微信模块
         async function initWechat() {
@@ -2569,13 +2647,17 @@
         // 加载微信角色数据
         function loadWechatRoles() {
             try {
-                const savedRoles = localStorage.getItem('wechatRoles');
+                // 获取账号配置
+                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                const storageKey = accountConfig.loggedIn ? `wechatRoles_${accountConfig.username}` : 'wechatRoles';
+                
+                const savedRoles = localStorage.getItem(storageKey);
                 if (savedRoles) {
                     wechatRoles = JSON.parse(savedRoles);
                 } else {
                     // 默认角色数据
                     wechatRoles = [];
-                    localStorage.setItem('wechatRoles', JSON.stringify(wechatRoles));
+                    localStorage.setItem(storageKey, JSON.stringify(wechatRoles));
                 }
                 // 检查角色数量，显示对应视图
                 checkRolesCount();
@@ -2621,24 +2703,57 @@
                 } else if (tab === 'moments') {
                     document.getElementById('momentsTabView').classList.add('active');
                     navItems[1].classList.add('active');
+                    // 确保标签视图已经显示，然后重新渲染朋友圈列表
+                    setTimeout(() => {
+                        renderMomentsList();
+                    }, 0);
                 } else if (tab === 'profile') {
                     document.getElementById('profileTabView').classList.add('active');
                     navItems[2].classList.add('active');
+                    // 确保标签视图已经显示，然后重新渲染个人页面
+                    setTimeout(() => {
+                        renderProfilePage();
+                    }, 0);
                 }
             } catch (error) {
                 console.error("切换标签失败：", error);
             }
         }
         
+        // 渲染个人页面
+        function renderProfilePage() {
+            try {
+                // 查找正确的容器元素
+                const profileContent = document.querySelector('#profileTabView .settings-view');
+                if (profileContent) {
+                    // 获取账号配置
+                    const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                    
+                    // 查找现有的退出登录按钮
+                    const existingLogoutBtn = profileContent.querySelector('button[onclick="logout()"]');
+                    if (existingLogoutBtn) {
+                        // 根据登录状态显示或隐藏退出登录按钮
+                        existingLogoutBtn.style.display = accountConfig.loggedIn ? 'block' : 'none';
+                    }
+                }
+            } catch (error) {
+                console.error("渲染个人页面失败：", error);
+            }
+        }
+        
         // 加载朋友圈数据
         function loadMoments() {
             try {
-                const savedMoments = localStorage.getItem('wechatMoments');
+                // 获取账号配置
+                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                const storageKey = accountConfig.loggedIn ? `wechatMoments_${accountConfig.username}` : 'wechatMoments';
+                
+                const savedMoments = localStorage.getItem(storageKey);
                 if (savedMoments) {
                     moments = JSON.parse(savedMoments);
                 } else {
                     moments = [];
-                    localStorage.setItem('wechatMoments', JSON.stringify(moments));
+                    localStorage.setItem(storageKey, JSON.stringify(moments));
                 }
             } catch (error) {
                 console.error("加载朋友圈数据失败：", error);
@@ -2648,7 +2763,11 @@
         // 保存朋友圈数据
         function saveMoments() {
             try {
-                localStorage.setItem('wechatMoments', JSON.stringify(moments));
+                // 获取账号配置
+                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                const storageKey = accountConfig.loggedIn ? `wechatMoments_${accountConfig.username}` : 'wechatMoments';
+                
+                localStorage.setItem(storageKey, JSON.stringify(moments));
             } catch (error) {
                 console.error("保存朋友圈数据失败：", error);
             }
@@ -2793,8 +2912,14 @@
         // 调用后端API获取AI回复
         async function getAIResponse(message) {
             try {
-                // 获取AI配置
-                const aiConfig = JSON.parse(localStorage.getItem('aiPhoneConfig') || '{}');
+                // 获取微信独立配置，优先使用微信配置，其次使用酒馆配置
+                let aiConfig = {};
+                if (localStorage.getItem('wechatAIConfig')) {
+                    aiConfig = JSON.parse(localStorage.getItem('wechatAIConfig'));
+                } else if (localStorage.getItem('aiPhoneConfig')) {
+                    aiConfig = JSON.parse(localStorage.getItem('aiPhoneConfig'));
+                }
+                
                 const platform = aiConfig.platform || 'openai';
                 const apiKey = aiConfig.apiKey || '';
                 const model = aiConfig.model || 'gpt-3.5-turbo';
@@ -2802,7 +2927,8 @@
                 
                 // 检查API密钥是否存在
                 if (!apiKey) {
-                    throw new Error('缺少API密钥，请在酒馆页面配置API密钥');
+                    console.log('缺少API密钥，使用模拟回复');
+                    return getMockReply();
                 }
                 
                 // 构建请求体
@@ -2841,18 +2967,35 @@
             } catch (error) {
                 console.error("获取AI回复API调用失败：", error);
                 // 失败时使用模拟回复作为后备
-                const replies = [
-                    '你好！',
-                    '我在呢',
-                    '有什么可以帮你的吗？',
-                    '好的，没问题',
-                    '哈哈哈，有意思',
-                    '我理解你的意思',
-                    '谢谢你的分享',
-                    '我也这么觉得'
-                ];
-                return replies[Math.floor(Math.random() * replies.length)];
+                return getMockReply();
             }
+        }
+        
+        // 获取模拟回复
+        function getMockReply() {
+            const replies = [
+                '你好！',
+                '我在呢',
+                '有什么可以帮你的吗？',
+                '好的，没问题',
+                '哈哈哈，有意思',
+                '我理解你的意思',
+                '谢谢你的分享',
+                '我也这么觉得',
+                '太棒了！',
+                '真的吗？',
+                '我同意你的看法',
+                '好主意！',
+                '你说得对',
+                '我明白了',
+                '没问题，随时可以',
+                '很高兴听到这个消息',
+                '太有趣了',
+                '我也是这么想的',
+                '好的，我知道了',
+                '谢谢你告诉我'
+            ];
+            return replies[Math.floor(Math.random() * replies.length)];
         }
         
         // 构建系统提示
@@ -2896,7 +3039,11 @@
         // 加载微信设置数据
         function loadWechatSettings() {
             try {
-                const savedSettings = localStorage.getItem('wechatSettings');
+                // 获取账号配置
+                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                const storageKey = accountConfig.loggedIn ? `wechatSettings_${accountConfig.username}` : 'wechatSettings';
+                
+                const savedSettings = localStorage.getItem(storageKey);
                 if (savedSettings) {
                     wechatSettings = JSON.parse(savedSettings);
                 } else {
@@ -2926,7 +3073,7 @@
                             url: ''
                         }
                     };
-                    localStorage.setItem('wechatSettings', JSON.stringify(wechatSettings));
+                    localStorage.setItem(storageKey, JSON.stringify(wechatSettings));
                 }
             } catch (error) {
                 console.error("加载微信设置失败：", error);
@@ -2936,7 +3083,11 @@
         // 保存微信设置数据
         function saveWechatSettings() {
             try {
-                localStorage.setItem('wechatSettings', JSON.stringify(wechatSettings));
+                // 获取账号配置
+                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                const storageKey = accountConfig.loggedIn ? `wechatSettings_${accountConfig.username}` : 'wechatSettings';
+                
+                localStorage.setItem(storageKey, JSON.stringify(wechatSettings));
             } catch (error) {
                 console.error("保存微信设置失败：", error);
             }
@@ -2945,7 +3096,11 @@
         // 保存微信角色数据
         function saveWechatRoles() {
             try {
-                localStorage.setItem('wechatRoles', JSON.stringify(wechatRoles));
+                // 获取账号配置
+                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                const storageKey = accountConfig.loggedIn ? `wechatRoles_${accountConfig.username}` : 'wechatRoles';
+                
+                localStorage.setItem(storageKey, JSON.stringify(wechatRoles));
             } catch (error) {
                 console.error("保存微信角色失败：", error);
             }
@@ -2960,23 +3115,257 @@
                 wechatRoles.forEach(role => {
                     const conversationItem = document.createElement('div');
                     conversationItem.className = 'conversation-item';
-                    conversationItem.onclick = () => startChat(role);
+                    
+                    // 确定头像显示方式
+                    let avatarHtml = '';
+                    if (role.avatarUrl) {
+                        // 如果有头像URL，显示图片
+                        avatarHtml = `<img src="${role.avatarUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                    } else {
+                        // 否则显示默认头像
+                        avatarHtml = role.avatar || '👤';
+                    }
                     
                     conversationItem.innerHTML = `
-                        <div class="conversation-avatar">${role.avatar}</div>
-                        <div class="conversation-info">
-                            <div class="conversation-top">
-                                <div class="conversation-name">${role.nickname}</div>
-                                <div class="conversation-time">${role.lastTime}</div>
+                        <div class="conversation-content">
+                            <div class="conversation-avatar">${avatarHtml}</div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="conversation-name">${role.nickname}</div>
+                                    <div class="conversation-time">${role.lastTime}</div>
+                                </div>
+                                <div class="conversation-last">${role.lastMessage}</div>
                             </div>
-                            <div class="conversation-last">${role.lastMessage}</div>
+                        </div>
+                        <div class="conversation-actions">
+                            <button class="conversation-action-btn delete" onclick="event.stopPropagation(); deleteRole('${role.id}')">删除</button>
                         </div>
                     `;
+                    
+                    // 添加点击事件
+                    const content = conversationItem.querySelector('.conversation-content');
+                    content.onclick = () => startChat(role);
+                    
+                    // 添加长按事件
+                    let longPressTimer;
+                    content.addEventListener('mousedown', function(e) {
+                        longPressTimer = setTimeout(() => {
+                            showLongPressMenu(e.clientX, e.clientY, role.id);
+                        }, 500);
+                    });
+                    
+                    content.addEventListener('mouseup', function() {
+                        clearTimeout(longPressTimer);
+                    });
+                    
+                    content.addEventListener('mouseleave', function() {
+                        clearTimeout(longPressTimer);
+                    });
+                    
+                    // 添加触摸事件（支持移动设备）
+                    content.addEventListener('touchstart', function(e) {
+                        longPressTimer = setTimeout(() => {
+                            const touch = e.touches[0];
+                            showLongPressMenu(touch.clientX, touch.clientY, role.id);
+                        }, 500);
+                    });
+                    
+                    content.addEventListener('touchend', function() {
+                        clearTimeout(longPressTimer);
+                    });
+                    
+                    // 添加左滑功能
+                    let startX, moveX, isSwiping;
+                    
+                    // 触摸事件（移动设备）
+                    content.addEventListener('touchstart', function(e) {
+                        startX = e.touches[0].clientX;
+                        isSwiping = false;
+                    });
+                    
+                    content.addEventListener('touchmove', function(e) {
+                        if (!startX) return;
+                        moveX = e.touches[0].clientX;
+                        const diffX = moveX - startX;
+                        
+                        // 只允许左滑
+                        if (diffX < 0 && Math.abs(diffX) > 10) {
+                            isSwiping = true;
+                            const actions = conversationItem.querySelector('.conversation-actions');
+                            const swipeDistance = Math.min(Math.abs(diffX), 120);
+                            content.style.transform = `translateX(-${swipeDistance}px)`;
+                            actions.style.right = `${120 - swipeDistance}px`;
+                        }
+                    });
+                    
+                    content.addEventListener('touchend', function(e) {
+                        if (!isSwiping) return;
+                        
+                        const diffX = moveX - startX;
+                        const actions = conversationItem.querySelector('.conversation-actions');
+                        
+                        if (Math.abs(diffX) > 60) {
+                            // 显示删除按钮
+                            content.style.transform = 'translateX(-120px)';
+                            actions.style.right = '0';
+                        } else {
+                            // 恢复原位
+                            content.style.transform = 'translateX(0)';
+                            actions.style.right = '-120px';
+                        }
+                        
+                        startX = null;
+                        moveX = null;
+                        isSwiping = false;
+                    });
+                    
+                    // 鼠标事件（电脑端）
+                    content.addEventListener('mousedown', function(e) {
+                        // 只处理左键
+                        if (e.button !== 0) return;
+                        startX = e.clientX;
+                        isSwiping = false;
+                        
+                        // 添加鼠标移动和释放事件
+                        function onMouseMove(e) {
+                            if (!startX) return;
+                            moveX = e.clientX;
+                            const diffX = moveX - startX;
+                            
+                            // 只允许左滑
+                            if (diffX < 0 && Math.abs(diffX) > 10) {
+                                isSwiping = true;
+                                const actions = conversationItem.querySelector('.conversation-actions');
+                                const swipeDistance = Math.min(Math.abs(diffX), 120);
+                                content.style.transform = `translateX(-${swipeDistance}px)`;
+                                actions.style.right = `${120 - swipeDistance}px`;
+                            }
+                        }
+                        
+                        function onMouseUp(e) {
+                            if (!isSwiping) {
+                                startX = null;
+                                moveX = null;
+                                isSwiping = false;
+                                document.removeEventListener('mousemove', onMouseMove);
+                                document.removeEventListener('mouseup', onMouseUp);
+                                return;
+                            }
+                            
+                            const diffX = moveX - startX;
+                            const actions = conversationItem.querySelector('.conversation-actions');
+                            
+                            if (Math.abs(diffX) > 60) {
+                                // 显示删除按钮
+                                content.style.transform = 'translateX(-120px)';
+                                actions.style.right = '0';
+                            } else {
+                                // 恢复原位
+                                content.style.transform = 'translateX(0)';
+                                actions.style.right = '-120px';
+                            }
+                            
+                            startX = null;
+                            moveX = null;
+                            isSwiping = false;
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.removeEventListener('mouseup', onMouseUp);
+                        }
+                        
+                        document.addEventListener('mousemove', onMouseMove);
+                        document.addEventListener('mouseup', onMouseUp);
+                    });
+                    
+                    // 点击其他区域时关闭左滑菜单
+                    document.addEventListener('click', function() {
+                        content.style.transform = 'translateX(0)';
+                        const actions = conversationItem.querySelector('.conversation-actions');
+                        actions.style.right = '-120px';
+                    });
                     
                     messageList.appendChild(conversationItem);
                 });
             } catch (error) {
                 console.error("渲染消息列表失败：", error);
+            }
+        }
+        
+        // 显示长按菜单
+        function showLongPressMenu(x, y, roleId) {
+            // 移除之前的菜单
+            const existingMenu = document.querySelector('.long-press-menu');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+            
+            // 创建长按菜单
+            const menu = document.createElement('div');
+            menu.className = 'long-press-menu';
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+            
+            menu.innerHTML = `
+                <div class="long-press-menu-item" onclick="startChatById('${roleId}')">打开聊天</div>
+                <div class="long-press-menu-item" onclick="editRole('${roleId}')">编辑角色</div>
+                <div class="long-press-menu-item delete" onclick="deleteRole('${roleId}'); closeLongPressMenu()">删除角色</div>
+            `;
+            
+            document.body.appendChild(menu);
+            
+            // 点击其他区域关闭菜单
+            setTimeout(() => {
+                document.addEventListener('click', closeLongPressMenu);
+            }, 100);
+        }
+        
+        // 关闭长按菜单
+        function closeLongPressMenu() {
+            const menu = document.querySelector('.long-press-menu');
+            if (menu) {
+                menu.remove();
+            }
+            document.removeEventListener('click', closeLongPressMenu);
+        }
+        
+        // 根据ID开始聊天
+        function startChatById(roleId) {
+            closeLongPressMenu();
+            const role = wechatRoles.find(r => r.id === roleId);
+            if (role) {
+                startChat(role);
+            }
+        }
+        
+        // 编辑角色
+        function editRole(roleId) {
+            closeLongPressMenu();
+            // 这里可以添加编辑角色的逻辑
+            alert('编辑角色功能将在后续版本中实现');
+        }
+        
+        // 删除角色
+        function deleteRole(roleId) {
+            try {
+                // 显示确认对话框
+                if (confirm('确定要删除这个角色吗？此操作不可恢复。')) {
+                    // 查找角色索引
+                    const roleIndex = wechatRoles.findIndex(role => role.id === roleId);
+                    if (roleIndex !== -1) {
+                        // 删除角色
+                        wechatRoles.splice(roleIndex, 1);
+                        // 保存到本地存储
+                        saveWechatRoles();
+                        // 重新渲染消息列表
+                        renderMessageList();
+                        // 检查角色数量
+                        checkRolesCount();
+                        // 显示删除成功提示
+                        alert('角色删除成功！');
+                    }
+                }
+            } catch (error) {
+                console.error("删除角色失败：", error);
+                alert('删除角色失败，请重试');
             }
         }
         
@@ -3011,6 +3400,8 @@
         // 切换到消息列表
         function switchToMessageList() {
             switchWechatView('messageListView');
+            // 重新加载所有数据，确保密友圈和我的模块显示正常
+            reloadWechatData();
         }
         
         // 显示角色设置
@@ -3065,10 +3456,13 @@
                     return;
                 }
                 
+                // 获取用户上传的头像，如果没有则使用默认头像
+                const avatarUrl = localStorage.getItem('avatarUrl');
                 const newRole = {
                     id: Date.now().toString(),
                     nickname: nickname,
-                    avatar: '👤',
+                    avatar: avatarUrl || '👤',
+                    avatarUrl: avatarUrl,
                     lastMessage: '你好！',
                     lastTime: new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})
                 };
@@ -3079,8 +3473,9 @@
                 checkRolesCount();
                 hideAddRoleModal();
                 
-                // 清空输入
+                // 清空输入和头像缓存
                 document.getElementById('roleNickname').value = '';
+                localStorage.removeItem('avatarUrl');
             } catch (error) {
                 console.error("添加角色失败：", error);
             }
@@ -3088,8 +3483,33 @@
         
         // 选择头像
         function selectAvatar() {
-            // 这里可以实现头像选择逻辑
-            alert('头像选择功能开发中');
+            try {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.onchange = function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const avatarUrl = e.target.result;
+                            // 保存头像URL到localStorage
+                            localStorage.setItem('avatarUrl', avatarUrl);
+                            // 更新界面上的头像显示
+                            const avatarPlaceholder = document.querySelector('.avatar-placeholder');
+                            if (avatarPlaceholder) {
+                                avatarPlaceholder.innerHTML = `<img src="${avatarUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                            }
+                            alert('头像上传成功！');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                fileInput.click();
+            } catch (error) {
+                console.error("选择头像失败：", error);
+                alert('头像选择失败，请重试');
+            }
         }
         
         // 显示礼物弹窗
@@ -3156,12 +3576,17 @@
                     chatMessages.removeChild(loadingMessage);
                     // 添加AI回复
                     addChatMessage(reply, false);
+                    // 使用语音合成朗读回复
+                    speak(reply);
                 } catch (error) {
                     console.error("获取AI回复失败：", error);
                     // 移除加载状态
                     chatMessages.removeChild(loadingMessage);
                     // 添加错误提示
-                    addChatMessage('抱歉，获取回复失败，请重试', false);
+                    const errorMessage = '抱歉，获取回复失败，请重试';
+                    addChatMessage(errorMessage, false);
+                    // 使用语音合成朗读错误提示
+                    speak(errorMessage);
                 }
             } catch (error) {
                 console.error("发送消息失败：", error);
@@ -3246,18 +3671,55 @@
         // 选择角色头像
         function selectRoleAvatar() {
             try {
-                alert('头像选择功能开发中');
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.onchange = function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const avatarUrl = e.target.result;
+                            if (currentChatRole) {
+                                currentChatRole.avatarUrl = avatarUrl;
+                                saveWechatRoles();
+                                document.getElementById('roleAvatar').src = avatarUrl;
+                                alert('角色头像上传成功！');
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                fileInput.click();
             } catch (error) {
                 console.error("选择角色头像失败：", error);
+                alert('头像选择失败，请重试');
             }
         }
         
         // 选择我的头像
         function selectMyAvatar() {
             try {
-                alert('头像选择功能开发中');
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.onchange = function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const avatarUrl = e.target.result;
+                            localStorage.setItem('myAvatarUrl', avatarUrl);
+                            document.getElementById('myAvatar').src = avatarUrl;
+                            alert('我的头像上传成功！');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                fileInput.click();
             } catch (error) {
                 console.error("选择我的头像失败：", error);
+                alert('头像选择失败，请重试');
             }
         }
         
@@ -3360,15 +3822,1074 @@
         
         // 功能按钮点击事件
         function showEmojiPanel() {
-            alert('表情功能开发中');
+            try {
+                // 创建表情面板
+                const panel = document.createElement('div');
+                panel.style.position = 'fixed';
+                panel.style.bottom = '0';
+                panel.style.left = '0';
+                panel.style.width = '100%';
+                panel.style.height = '300px';
+                panel.style.backgroundColor = 'white';
+                panel.style.borderTopLeftRadius = '20px';
+                panel.style.borderTopRightRadius = '20px';
+                panel.style.boxShadow = '0 -2px 10px rgba(0,0,0,0.1)';
+                panel.style.zIndex = '1000';
+                panel.style.display = 'flex';
+                panel.style.flexDirection = 'column';
+                
+                // 面板头部
+                const header = document.createElement('div');
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.alignItems = 'center';
+                header.style.padding = '10px 20px';
+                header.style.borderBottom = '1px solid #e0e0e0';
+                
+                const title = document.createElement('div');
+                title.style.fontSize = '16px';
+                title.style.fontWeight = '500';
+                title.textContent = '表情';
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.style.background = 'none';
+                closeBtn.style.border = 'none';
+                closeBtn.style.fontSize = '20px';
+                closeBtn.style.cursor = 'pointer';
+                closeBtn.textContent = '×';
+                closeBtn.onclick = function() {
+                    document.body.removeChild(panel);
+                };
+                
+                header.appendChild(title);
+                header.appendChild(closeBtn);
+                panel.appendChild(header);
+                
+                // 表情库标签
+                const tabs = document.createElement('div');
+                tabs.style.display = 'flex';
+                tabs.style.borderBottom = '1px solid #e0e0e0';
+                
+                const userTab = document.createElement('button');
+                userTab.style.flex = '1';
+                userTab.style.padding = '10px';
+                userTab.style.background = '#ff69b4';
+                userTab.style.color = 'white';
+                userTab.style.border = 'none';
+                userTab.style.cursor = 'pointer';
+                userTab.textContent = '我的表情';
+                
+                const roleTab = document.createElement('button');
+                roleTab.style.flex = '1';
+                roleTab.style.padding = '10px';
+                roleTab.style.background = 'white';
+                roleTab.style.color = '#333';
+                roleTab.style.border = 'none';
+                roleTab.style.cursor = 'pointer';
+                roleTab.textContent = '角色表情';
+                
+                tabs.appendChild(userTab);
+                tabs.appendChild(roleTab);
+                panel.appendChild(tabs);
+                
+                // 表情内容区域
+                const content = document.createElement('div');
+                content.style.flex = '1';
+                content.style.padding = '10px';
+                content.style.overflowY = 'auto';
+                
+                // 加载用户表情
+                loadUserEmojis(content);
+                
+                // 标签切换
+                userTab.onclick = function() {
+                    userTab.style.background = '#ff69b4';
+                    userTab.style.color = 'white';
+                    roleTab.style.background = 'white';
+                    roleTab.style.color = '#333';
+                    content.innerHTML = '';
+                    loadUserEmojis(content);
+                };
+                
+                roleTab.onclick = function() {
+                    roleTab.style.background = '#ff69b4';
+                    roleTab.style.color = 'white';
+                    userTab.style.background = 'white';
+                    userTab.style.color = '#333';
+                    content.innerHTML = '';
+                    loadRoleEmojis(content);
+                };
+                
+                panel.appendChild(content);
+                document.body.appendChild(panel);
+                
+            } catch (error) {
+                console.error("显示表情面板失败：", error);
+                alert('表情功能加载失败，请重试');
+            }
+        }
+        
+        // 加载用户表情
+        function loadUserEmojis(container) {
+            try {
+                // 获取账号配置
+                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                const storageKey = accountConfig.loggedIn ? `userEmojis_${accountConfig.username}` : 'userEmojis';
+                
+                const userEmojis = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                
+                // 上传按钮
+                const uploadBtn = document.createElement('div');
+                uploadBtn.style.width = '60px';
+                uploadBtn.style.height = '60px';
+                uploadBtn.style.display = 'flex';
+                uploadBtn.style.alignItems = 'center';
+                uploadBtn.style.justifyContent = 'center';
+                uploadBtn.style.border = '2px dashed #ccc';
+                uploadBtn.style.borderRadius = '8px';
+                uploadBtn.style.cursor = 'pointer';
+                uploadBtn.style.margin = '5px';
+                uploadBtn.innerHTML = '<span style="font-size: 24px;">+</span>';
+                uploadBtn.title = '上传表情';
+                uploadBtn.onclick = function() {
+                    uploadEmoji('user');
+                };
+                container.appendChild(uploadBtn);
+                
+                // 显示现有表情
+                userEmojis.forEach(emoji => {
+                    const emojiItem = document.createElement('div');
+                    emojiItem.style.width = '60px';
+                    emojiItem.style.height = '60px';
+                    emojiItem.style.margin = '5px';
+                    emojiItem.style.cursor = 'pointer';
+                    emojiItem.style.borderRadius = '8px';
+                    emojiItem.style.overflow = 'hidden';
+                    emojiItem.title = '点击发送';
+                    
+                    const img = document.createElement('img');
+                    img.src = emoji.url;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    
+                    img.onclick = function() {
+                        sendEmoji(emoji.url);
+                        // 关闭面板
+                        const panel = container.closest('div[style*="position: fixed"]');
+                        if (panel) {
+                            document.body.removeChild(panel);
+                        }
+                    };
+                    
+                    emojiItem.appendChild(img);
+                    container.appendChild(emojiItem);
+                });
+                
+                // 设置布局
+                container.style.display = 'flex';
+                container.style.flexWrap = 'wrap';
+                container.style.justifyContent = 'flex-start';
+                
+            } catch (error) {
+                console.error("加载用户表情失败：", error);
+            }
+        }
+        
+        // 加载角色表情
+        function loadRoleEmojis(container) {
+            try {
+                // 获取账号配置
+                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                const storageKey = accountConfig.loggedIn ? `roleEmojis_${accountConfig.username}` : 'roleEmojis';
+                
+                const roleEmojis = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                
+                // 上传按钮
+                const uploadBtn = document.createElement('div');
+                uploadBtn.style.width = '60px';
+                uploadBtn.style.height = '60px';
+                uploadBtn.style.display = 'flex';
+                uploadBtn.style.alignItems = 'center';
+                uploadBtn.style.justifyContent = 'center';
+                uploadBtn.style.border = '2px dashed #ccc';
+                uploadBtn.style.borderRadius = '8px';
+                uploadBtn.style.cursor = 'pointer';
+                uploadBtn.style.margin = '5px';
+                uploadBtn.innerHTML = '<span style="font-size: 24px;">+</span>';
+                uploadBtn.title = '上传表情';
+                uploadBtn.onclick = function() {
+                    uploadEmoji('role');
+                };
+                container.appendChild(uploadBtn);
+                
+                // 显示现有表情
+                roleEmojis.forEach(emoji => {
+                    const emojiItem = document.createElement('div');
+                    emojiItem.style.width = '60px';
+                    emojiItem.style.height = '60px';
+                    emojiItem.style.margin = '5px';
+                    emojiItem.style.cursor = 'pointer';
+                    emojiItem.style.borderRadius = '8px';
+                    emojiItem.style.overflow = 'hidden';
+                    emojiItem.title = '点击发送';
+                    
+                    const img = document.createElement('img');
+                    img.src = emoji.url;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    
+                    img.onclick = function() {
+                        sendEmoji(emoji.url);
+                        // 关闭面板
+                        const panel = container.closest('div[style*="position: fixed"]');
+                        if (panel) {
+                            document.body.removeChild(panel);
+                        }
+                    };
+                    
+                    emojiItem.appendChild(img);
+                    container.appendChild(emojiItem);
+                });
+                
+                // 设置布局
+                container.style.display = 'flex';
+                container.style.flexWrap = 'wrap';
+                container.style.justifyContent = 'flex-start';
+                
+            } catch (error) {
+                console.error("加载角色表情失败：", error);
+            }
+        }
+        
+        // 上传表情
+        function uploadEmoji(type) {
+            try {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.onchange = function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const emojiUrl = e.target.result;
+                            
+                            // 创建表情包含义输入弹窗
+                            const modal = document.createElement('div');
+                            modal.style.position = 'fixed';
+                            modal.style.top = '0';
+                            modal.style.left = '0';
+                            modal.style.width = '100%';
+                            modal.style.height = '100%';
+                            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                            modal.style.display = 'flex';
+                            modal.style.alignItems = 'center';
+                            modal.style.justifyContent = 'center';
+                            modal.style.zIndex = '1001';
+                            
+                            const content = document.createElement('div');
+                            content.style.backgroundColor = 'white';
+                            content.style.borderRadius = '12px';
+                            content.style.width = '90%';
+                            content.style.maxWidth = '400px';
+                            content.style.padding = '20px';
+                            
+                            content.innerHTML = `
+                                <div style="text-align: center; margin-bottom: 20px;">
+                                    <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 10px;">添加表情包</h3>
+                                    <div style="width: 100px; height: 100px; margin: 0 auto; border-radius: 8px; overflow: hidden; margin-bottom: 15px;">
+                                        <img src="${emojiUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
+                                    <input type="text" id="emojiMeaning" placeholder="请输入表情包含义" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; margin-bottom: 20px;">
+                                    <div style="display: flex; gap: 10px;">
+                                        <button id="cancelEmojiBtn" style="flex: 1; padding: 10px; background-color: #f0f0f0; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">取消</button>
+                                        <button id="saveEmojiBtn" style="flex: 1; padding: 10px; background-color: #ff69b4; border: none; border-radius: 8px; color: white; font-size: 14px; cursor: pointer;">保存</button>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            modal.appendChild(content);
+                            document.body.appendChild(modal);
+                            
+                            // 取消按钮
+                            document.getElementById('cancelEmojiBtn').onclick = function() {
+                                document.body.removeChild(modal);
+                            };
+                            
+                            // 保存按钮
+                            document.getElementById('saveEmojiBtn').onclick = function() {
+                                const meaning = document.getElementById('emojiMeaning').value.trim();
+                                const emoji = {
+                                    id: Date.now().toString(),
+                                    url: emojiUrl,
+                                    name: file.name,
+                                    type: type,
+                                    meaning: meaning,
+                                    createdAt: new Date().toISOString()
+                                };
+                                
+                                // 获取账号配置
+                                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                                // 保存到localStorage
+                                const baseKey = type === 'user' ? 'userEmojis' : 'roleEmojis';
+                                const storageKey = accountConfig.loggedIn ? `${baseKey}_${accountConfig.username}` : baseKey;
+                                const emojis = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                                emojis.push(emoji);
+                                localStorage.setItem(storageKey, JSON.stringify(emojis));
+                                
+                                alert('表情上传成功！');
+                                document.body.removeChild(modal);
+                                
+                                // 刷新表情面板
+                                const panel = document.querySelector('div[style*="position: fixed"]');
+                                if (panel) {
+                                    document.body.removeChild(panel);
+                                    showEmojiPanel();
+                                }
+                            };
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                fileInput.click();
+            } catch (error) {
+                console.error("上传表情失败：", error);
+                alert('表情上传失败，请重试');
+            }
+        }
+        
+        // 发送表情
+        function sendEmoji(emojiUrl) {
+            try {
+                // 添加表情消息
+                const chatMessages = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message own';
+                messageDiv.innerHTML = `
+                    <div class="bubble own">
+                        <img src="${emojiUrl}" style="width: 60px; height: 60px; border-radius: 8px;">
+                    </div>
+                    <div class="avatar">👤</div>
+                `;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // 模拟AI回复
+                setTimeout(() => {
+                    // 获取账号配置
+                    const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                    const storageKey = accountConfig.loggedIn ? `roleEmojis_${accountConfig.username}` : 'roleEmojis';
+                    
+                    // 获取角色专属表情库
+                    const roleEmojis = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    
+                    // 生成智能回复
+                    generateEmojiResponse(roleEmojis, emojiUrl);
+                }, 1000);
+                
+            } catch (error) {
+                console.error("发送表情失败：", error);
+            }
+        }
+        
+        // 生成表情包智能回复
+        function generateEmojiResponse(roleEmojis, userEmojiUrl) {
+            try {
+                const chatMessages = document.getElementById('chatMessages');
+                
+                // 获取账号配置
+                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                const storageKey = accountConfig.loggedIn ? `userEmojis_${accountConfig.username}` : 'userEmojis';
+                
+                // 尝试获取用户发送的表情包含义
+                const userEmojis = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                const userEmoji = userEmojis.find(emoji => emoji.url === userEmojiUrl);
+                const userEmojiMeaning = userEmoji ? userEmoji.meaning : '';
+                
+                // 获取最近的对话上下文
+                const recentMessages = [];
+                const messageElements = chatMessages.querySelectorAll('.chat-message');
+                for (let i = messageElements.length - 1; i >= 0 && recentMessages.length < 5; i--) {
+                    const messageElement = messageElements[i];
+                    const bubble = messageElement.querySelector('.bubble');
+                    if (bubble) {
+                        const text = bubble.textContent.trim();
+                        if (text) {
+                            recentMessages.unshift(text);
+                        }
+                    }
+                }
+                const context = recentMessages.join(' ');
+                
+                // 如果角色表情库不为空，根据上下文选择合适的表情包
+                if (roleEmojis.length > 0) {
+                    let selectedEmoji = null;
+                    
+                    // 1. 首先尝试根据用户表情的含义匹配
+                    if (userEmojiMeaning) {
+                        selectedEmoji = findMatchingEmoji(roleEmojis, userEmojiMeaning);
+                    }
+                    
+                    // 2. 如果没有匹配到，尝试根据对话上下文匹配
+                    if (!selectedEmoji && context) {
+                        selectedEmoji = findMatchingEmoji(roleEmojis, context);
+                    }
+                    
+                    // 3. 如果仍然没有匹配到，随机选择一个
+                    if (!selectedEmoji) {
+                        selectedEmoji = roleEmojis[Math.floor(Math.random() * roleEmojis.length)];
+                    }
+                    
+                    // 创建角色表情回复
+                    const roleMessageDiv = document.createElement('div');
+                    roleMessageDiv.className = 'chat-message';
+                    roleMessageDiv.innerHTML = `
+                        <div class="avatar">👧</div>
+                        <div class="bubble other">
+                            <img src="${selectedEmoji.url}" style="width: 60px; height: 60px; border-radius: 8px;">
+                        </div>
+                    `;
+                    chatMessages.appendChild(roleMessageDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                } else {
+                    // 如果角色表情库为空，使用文本回复
+                    const responses = [
+                        '哈哈，有趣！',
+                        '我也这么觉得！',
+                        '你真可爱！',
+                        '没错！',
+                        '同意！',
+                        '太棒了！',
+                        '好的！',
+                        '明白了！'
+                    ];
+                    
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    const roleMessageDiv = document.createElement('div');
+                    roleMessageDiv.className = 'chat-message';
+                    roleMessageDiv.innerHTML = `
+                        <div class="avatar">👧</div>
+                        <div class="bubble other">${randomResponse}</div>
+                    `;
+                    chatMessages.appendChild(roleMessageDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+                
+            } catch (error) {
+                console.error("生成表情回复失败：", error);
+                // 失败时使用默认回复
+                const chatMessages = document.getElementById('chatMessages');
+                const roleMessageDiv = document.createElement('div');
+                roleMessageDiv.className = 'chat-message';
+                roleMessageDiv.innerHTML = `
+                    <div class="avatar">👧</div>
+                    <div class="bubble other">哈哈！</div>
+                `;
+                chatMessages.appendChild(roleMessageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+        
+        // 根据文本内容匹配合适的表情包
+        function findMatchingEmoji(emojis, text) {
+            // 简单的关键词匹配
+            const keywordMap = {
+                '开心': ['happy', 'joy', 'laugh', 'smile', '开心', '快乐', '高兴', '哈哈'],
+                '伤心': ['sad', 'cry', '难过', '伤心', '哭'],
+                '生气': ['angry', 'mad', '生气', '愤怒'],
+                '惊讶': ['surprised', 'shock', '惊讶', '震惊'],
+                '爱心': ['love', 'heart', '爱心', '喜欢'],
+                '感谢': ['thank', 'thanks', '感谢', '谢谢'],
+                '同意': ['agree', 'yes', 'ok', '好的', '同意', '是的'],
+                '拒绝': ['no', '拒绝', '不要', '不行']
+            };
+            
+            // 计算每个表情的匹配分数
+            let bestMatch = null;
+            let highestScore = 0;
+            
+            emojis.forEach(emoji => {
+                let score = 0;
+                const emojiMeaning = emoji.meaning || '';
+                
+                // 检查表情包含义与文本的匹配度
+                for (const [emotion, keywords] of Object.entries(keywordMap)) {
+                    for (const keyword of keywords) {
+                        if (text.includes(keyword) || emojiMeaning.includes(keyword)) {
+                            score += 1;
+                        }
+                    }
+                }
+                
+                // 如果分数更高，更新最佳匹配
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = emoji;
+                }
+            });
+            
+            return bestMatch;
         }
         
         function selectImage() {
-            alert('图片选择功能开发中');
+            try {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.onchange = function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const imageUrl = e.target.result;
+                            sendImage(imageUrl, file.name);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                fileInput.click();
+            } catch (error) {
+                console.error("选择图片失败：", error);
+                alert('图片选择失败，请重试');
+            }
+        }
+        
+        // 发送图片
+        function sendImage(imageUrl, fileName) {
+            try {
+                // 添加图片消息
+                const chatMessages = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message own';
+                messageDiv.innerHTML = `
+                    <div class="bubble own" style="max-width: 70%;">
+                        <img src="${imageUrl}" style="max-width: 100%; max-height: 300px; border-radius: 8px; object-fit: cover;">
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px;">${fileName}</div>
+                    </div>
+                    <div class="avatar">👤</div>
+                `;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // 尝试进行图片识别
+                recognizeImage(imageUrl);
+                
+            } catch (error) {
+                console.error("发送图片失败：", error);
+            }
+        }
+        
+        // 识别图片
+        async function recognizeImage(imageUrl) {
+            try {
+                // 获取识图API配置
+                const imageRecognitionConfig = JSON.parse(localStorage.getItem('imageRecognitionConfig') || '{}');
+                const apiKey = imageRecognitionConfig.apiKey;
+                const apiUrl = imageRecognitionConfig.apiUrl || 'https://api.openai.com/v1/chat/completions';
+                const model = imageRecognitionConfig.model || 'gpt-4-vision-preview';
+                
+                if (!apiKey) {
+                    // 如果没有配置API，使用模拟回复
+                    setTimeout(() => {
+                        sendImageRecognitionReply('这是一张图片');
+                    }, 1000);
+                    return;
+                }
+                
+                // 调用识图API
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            {
+                                role: 'user',
+                                content: [
+                                    {
+                                        type: 'text',
+                                        text: '请描述这张图片的内容'
+                                    },
+                                    {
+                                        type: 'image_url',
+                                        image_url: {
+                                            url: imageUrl
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        max_tokens: 300
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const description = data.choices[0].message.content;
+                sendImageRecognitionReply(description);
+                
+            } catch (error) {
+                console.error("图片识别失败：", error);
+                // 失败时使用模拟回复
+                sendImageRecognitionReply('这是一张图片');
+            }
+        }
+        
+        // 发送图片识别回复
+        function sendImageRecognitionReply(description) {
+            try {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message';
+                messageDiv.innerHTML = `
+                    <div class="avatar">👧</div>
+                    <div class="bubble other">
+                        <div>${description}</div>
+                    </div>
+                `;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } catch (error) {
+                console.error("发送图片识别回复失败：", error);
+            }
+        }
+        
+        // 语音API配置
+        function showVoiceSettings() {
+            try {
+                // 获取当前语音配置
+                const voiceConfig = JSON.parse(localStorage.getItem('voiceConfig') || '{}');
+                
+                const html = `
+                    <div style="padding: 20px;">
+                        <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 16px;">语音设置</h3>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">语音识别API</label>
+                            <select id="speechRecognitionApi" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background-color: white;">
+                                <option value="web-speech-api" ${voiceConfig.speechRecognitionApi === 'web-speech-api' ? 'selected' : ''}>Web Speech API</option>
+                                <option value="custom" ${voiceConfig.speechRecognitionApi === 'custom' ? 'selected' : ''}>自定义API</option>
+                            </select>
+                        </div>
+                        
+                        <div id="customRecognitionApiItem" style="margin-bottom: 16px; ${voiceConfig.speechRecognitionApi === 'custom' ? 'display: block;' : 'display: none;'}">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">自定义API地址</label>
+                            <input type="text" id="customRecognitionApiUrl" value="${voiceConfig.customRecognitionApiUrl || ''}" placeholder="https://api.example.com/speech-to-text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                        
+                        <div id="customRecognitionApiKeyItem" style="margin-bottom: 16px; ${voiceConfig.speechRecognitionApi === 'custom' ? 'display: block;' : 'display: none;'}">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">API密钥</label>
+                            <input type="password" id="customRecognitionApiKey" value="${voiceConfig.customRecognitionApiKey || ''}" placeholder="输入API密钥" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">语音合成API</label>
+                            <select id="speechSynthesisApi" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background-color: white;">
+                                <option value="web-speech-api" ${voiceConfig.speechSynthesisApi === 'web-speech-api' ? 'selected' : ''}>Web Speech API</option>
+                                <option value="custom" ${voiceConfig.speechSynthesisApi === 'custom' ? 'selected' : ''}>自定义API</option>
+                            </select>
+                        </div>
+                        
+                        <div id="customSynthesisApiItem" style="margin-bottom: 16px; ${voiceConfig.speechSynthesisApi === 'custom' ? 'display: block;' : 'display: none;'}">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">自定义API地址</label>
+                            <input type="text" id="customSynthesisApiUrl" value="${voiceConfig.customSynthesisApiUrl || ''}" placeholder="https://api.example.com/text-to-speech" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                        
+                        <div id="customSynthesisApiKeyItem" style="margin-bottom: 16px; ${voiceConfig.speechSynthesisApi === 'custom' ? 'display: block;' : 'display: none;'}">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">API密钥</label>
+                            <input type="password" id="customSynthesisApiKey" value="${voiceConfig.customSynthesisApiKey || ''}" placeholder="输入API密钥" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">语音识别语言</label>
+                            <select id="recognitionLanguage" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background-color: white;">
+                                <option value="zh-CN" ${voiceConfig.recognitionLanguage === 'zh-CN' ? 'selected' : ''}>中文 (zh-CN)</option>
+                                <option value="en-US" ${voiceConfig.recognitionLanguage === 'en-US' ? 'selected' : ''}>英文 (en-US)</option>
+                            </select>
+                        </div>
+                        
+                        <button id="saveVoiceConfigBtn" style="width: 100%; padding: 12px; background-color: #ff69b4; border: none; border-radius: 8px; color: white; font-size: 16px; cursor: pointer;">保存设置</button>
+                    </div>
+                `;
+                
+                // 创建弹窗
+                const modal = document.createElement('div');
+                modal.style.position = 'fixed';
+                modal.style.top = '0';
+                modal.style.left = '0';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                modal.style.display = 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                modal.style.zIndex = '1000';
+                
+                const content = document.createElement('div');
+                content.style.backgroundColor = 'white';
+                content.style.borderRadius = '12px';
+                content.style.width = '90%';
+                content.style.maxWidth = '400px';
+                content.style.maxHeight = '80%';
+                content.style.overflowY = 'auto';
+                content.innerHTML = html;
+                
+                modal.appendChild(content);
+                document.body.appendChild(modal);
+                
+                // 添加事件监听
+                document.getElementById('speechRecognitionApi').addEventListener('change', function() {
+                    const customItem = document.getElementById('customRecognitionApiItem');
+                    const customKeyItem = document.getElementById('customRecognitionApiKeyItem');
+                    if (this.value === 'custom') {
+                        customItem.style.display = 'block';
+                        customKeyItem.style.display = 'block';
+                    } else {
+                        customItem.style.display = 'none';
+                        customKeyItem.style.display = 'none';
+                    }
+                });
+                
+                document.getElementById('speechSynthesisApi').addEventListener('change', function() {
+                    const customItem = document.getElementById('customSynthesisApiItem');
+                    const customKeyItem = document.getElementById('customSynthesisApiKeyItem');
+                    if (this.value === 'custom') {
+                        customItem.style.display = 'block';
+                        customKeyItem.style.display = 'block';
+                    } else {
+                        customItem.style.display = 'none';
+                        customKeyItem.style.display = 'none';
+                    }
+                });
+                
+                document.getElementById('saveVoiceConfigBtn').addEventListener('click', function() {
+                    const config = {
+                        speechRecognitionApi: document.getElementById('speechRecognitionApi').value,
+                        customRecognitionApiUrl: document.getElementById('customRecognitionApiUrl').value,
+                        customRecognitionApiKey: document.getElementById('customRecognitionApiKey').value,
+                        speechSynthesisApi: document.getElementById('speechSynthesisApi').value,
+                        customSynthesisApiUrl: document.getElementById('customSynthesisApiUrl').value,
+                        customSynthesisApiKey: document.getElementById('customSynthesisApiKey').value,
+                        recognitionLanguage: document.getElementById('recognitionLanguage').value
+                    };
+                    localStorage.setItem('voiceConfig', JSON.stringify(config));
+                    alert('语音设置已保存！');
+                    document.body.removeChild(modal);
+                });
+                
+                // 添加关闭功能
+                modal.onclick = function(e) {
+                    if (e.target === modal) {
+                        document.body.removeChild(modal);
+                    }
+                };
+                
+            } catch (error) {
+                console.error("显示语音设置失败：", error);
+                alert('语音设置功能加载失败，请重试');
+            }
+        }
+        
+        // 语音识别功能
+        function startSpeechRecognition() {
+            try {
+                // 获取语音配置
+                const voiceConfig = JSON.parse(localStorage.getItem('voiceConfig') || '{}');
+                const language = voiceConfig.recognitionLanguage || 'zh-CN';
+                
+                // 检查浏览器是否支持Web Speech API
+                if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    const recognition = new SpeechRecognition();
+                    
+                    recognition.lang = language;
+                    recognition.continuous = false;
+                    recognition.interimResults = false;
+                    
+                    recognition.onstart = function() {
+                        console.log('语音识别已开始');
+                    };
+                    
+                    recognition.onresult = function(event) {
+                        const transcript = event.results[0][0].transcript;
+                        console.log('识别结果:', transcript);
+                        // 这里可以处理识别结果，比如发送消息
+                        if (transcript) {
+                            const chatInput = document.getElementById('chatInput');
+                            chatInput.value = transcript;
+                            // 自动发送消息
+                            sendChatMessage();
+                        }
+                    };
+                    
+                    recognition.onerror = function(event) {
+                        console.error('语音识别错误:', event.error);
+                        alert('语音识别失败，请重试');
+                    };
+                    
+                    recognition.onend = function() {
+                        console.log('语音识别已结束');
+                    };
+                    
+                    recognition.start();
+                } else {
+                    alert('您的浏览器不支持语音识别功能');
+                }
+                
+            } catch (error) {
+                console.error("开始语音识别失败：", error);
+                alert('语音识别功能暂时不可用，请重试');
+            }
+        }
+        
+        // 语音合成功能
+        function speak(text) {
+            try {
+                // 获取语音配置
+                const voiceConfig = JSON.parse(localStorage.getItem('voiceConfig') || '{}');
+                
+                // 检查消息朗读是否启用
+                if (voiceConfig.speechEnabled === false) {
+                    return;
+                }
+                
+                // 检查浏览器是否支持Web Speech API
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = voiceConfig.recognitionLanguage || 'zh-CN';
+                    utterance.rate = 1;
+                    utterance.pitch = 1;
+                    utterance.volume = 1;
+                    
+                    speechSynthesis.speak(utterance);
+                } else {
+                    console.log('浏览器不支持语音合成功能');
+                }
+                
+            } catch (error) {
+                console.error("语音合成失败：", error);
+            }
         }
         
         function makeCall() {
-            alert('通话功能开发中');
+            try {
+                // 创建通话界面
+                const callPanel = document.createElement('div');
+                callPanel.style.position = 'fixed';
+                callPanel.style.top = '0';
+                callPanel.style.left = '0';
+                callPanel.style.width = '100%';
+                callPanel.style.height = '100%';
+                callPanel.style.backgroundColor = '#f5f5f5';
+                callPanel.style.display = 'flex';
+                callPanel.style.flexDirection = 'column';
+                callPanel.style.alignItems = 'center';
+                callPanel.style.justifyContent = 'space-between';
+                callPanel.style.padding = '40px 20px';
+                callPanel.style.zIndex = '1000';
+                
+                // 通话信息区域
+                const callInfo = document.createElement('div');
+                callInfo.style.display = 'flex';
+                callInfo.style.flexDirection = 'column';
+                callInfo.style.alignItems = 'center';
+                callInfo.style.marginTop = '100px';
+                
+                // 头像
+                const avatar = document.createElement('div');
+                avatar.style.width = '120px';
+                avatar.style.height = '120px';
+                avatar.style.borderRadius = '50%';
+                avatar.style.backgroundColor = '#ff69b4';
+                avatar.style.display = 'flex';
+                avatar.style.alignItems = 'center';
+                avatar.style.justifyContent = 'center';
+                avatar.style.fontSize = '48px';
+                avatar.textContent = '👧';
+                avatar.style.marginBottom = '20px';
+                
+                // 姓名
+                const name = document.createElement('div');
+                name.style.fontSize = '24px';
+                name.style.fontWeight = '500';
+                name.textContent = currentChatRole ? currentChatRole.nickname : 'AI助手';
+                name.style.marginBottom = '10px';
+                
+                // 通话状态
+                const status = document.createElement('div');
+                status.style.fontSize = '14px';
+                status.style.color = '#666';
+                status.textContent = '正在通话中...';
+                
+                // 通话时长
+                const duration = document.createElement('div');
+                duration.id = 'callDuration';
+                duration.style.fontSize = '16px';
+                duration.style.marginTop = '20px';
+                duration.textContent = '00:00';
+                
+                callInfo.appendChild(avatar);
+                callInfo.appendChild(name);
+                callInfo.appendChild(status);
+                callInfo.appendChild(duration);
+                
+                // 控制按钮区域
+                const controls = document.createElement('div');
+                controls.style.display = 'flex';
+                controls.style.gap = '20px';
+                controls.style.marginBottom = '100px';
+                
+                // 静音按钮
+                const muteBtn = document.createElement('button');
+                muteBtn.style.width = '60px';
+                muteBtn.style.height = '60px';
+                muteBtn.style.borderRadius = '50%';
+                muteBtn.style.border = 'none';
+                muteBtn.style.backgroundColor = 'white';
+                muteBtn.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                muteBtn.style.display = 'flex';
+                muteBtn.style.alignItems = 'center';
+                muteBtn.style.justifyContent = 'center';
+                muteBtn.style.fontSize = '24px';
+                muteBtn.textContent = '🔇';
+                muteBtn.title = '静音';
+                
+                let isMuted = false;
+                muteBtn.onclick = function() {
+                    isMuted = !isMuted;
+                    muteBtn.textContent = isMuted ? '🔊' : '🔇';
+                    muteBtn.title = isMuted ? '取消静音' : '静音';
+                };
+                
+                // 扬声器按钮
+                const speakerBtn = document.createElement('button');
+                speakerBtn.style.width = '60px';
+                speakerBtn.style.height = '60px';
+                speakerBtn.style.borderRadius = '50%';
+                speakerBtn.style.border = 'none';
+                speakerBtn.style.backgroundColor = 'white';
+                speakerBtn.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                speakerBtn.style.display = 'flex';
+                speakerBtn.style.alignItems = 'center';
+                speakerBtn.style.justifyContent = 'center';
+                speakerBtn.style.fontSize = '24px';
+                speakerBtn.textContent = '🔊';
+                speakerBtn.title = '扬声器';
+                
+                // 语音识别按钮
+                const voiceBtn = document.createElement('button');
+                voiceBtn.style.width = '60px';
+                voiceBtn.style.height = '60px';
+                voiceBtn.style.borderRadius = '50%';
+                voiceBtn.style.border = 'none';
+                voiceBtn.style.backgroundColor = 'white';
+                voiceBtn.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                voiceBtn.style.display = 'flex';
+                voiceBtn.style.alignItems = 'center';
+                voiceBtn.style.justifyContent = 'center';
+                voiceBtn.style.fontSize = '24px';
+                voiceBtn.textContent = '🎤';
+                voiceBtn.title = '语音输入';
+                voiceBtn.onclick = function() {
+                    startSpeechRecognition();
+                };
+                
+                // 结束通话按钮
+                const endBtn = document.createElement('button');
+                endBtn.style.width = '70px';
+                endBtn.style.height = '70px';
+                endBtn.style.borderRadius = '50%';
+                endBtn.style.border = 'none';
+                endBtn.style.backgroundColor = '#ff3b30';
+                endBtn.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+                endBtn.style.display = 'flex';
+                endBtn.style.alignItems = 'center';
+                endBtn.style.justifyContent = 'center';
+                endBtn.style.fontSize = '24px';
+                endBtn.textContent = '🔴';
+                endBtn.title = '结束通话';
+                
+                endBtn.onclick = function() {
+                    // 停止计时器
+                    clearInterval(timer);
+                    // 停止音频录制
+                    if (mediaRecorder) {
+                        mediaRecorder.stop();
+                    }
+                    // 停止语音合成
+                    if ('speechSynthesis' in window) {
+                        speechSynthesis.cancel();
+                    }
+                    // 移除通话面板
+                    document.body.removeChild(callPanel);
+                    // 显示通话结束提示
+                    alert('通话已结束');
+                };
+                
+                controls.appendChild(muteBtn);
+                controls.appendChild(voiceBtn);
+                controls.appendChild(endBtn);
+                controls.appendChild(speakerBtn);
+                
+                // 开始通话计时器
+                let seconds = 0;
+                const timer = setInterval(function() {
+                    seconds++;
+                    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                    const secs = (seconds % 60).toString().padStart(2, '0');
+                    document.getElementById('callDuration').textContent = `${mins}:${secs}`;
+                }, 1000);
+                
+                // 尝试使用Web Audio API进行语音录制
+                let mediaRecorder;
+                let audioChunks = [];
+                
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        
+                        mediaRecorder.ondataavailable = function(e) {
+                            if (e.data.size > 0) {
+                                audioChunks.push(e.data);
+                            }
+                        };
+                        
+                        mediaRecorder.onstop = function() {
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            // 这里可以保存录音或进行其他处理
+                            console.log('录音已保存:', audioUrl);
+                        };
+                        
+                        // 开始录制
+                        mediaRecorder.start();
+                    })
+                    .catch(error => {
+                        console.error('无法访问麦克风:', error);
+                        alert('无法访问麦克风，通话功能可能受限');
+                    });
+                
+                callPanel.appendChild(callInfo);
+                callPanel.appendChild(controls);
+                document.body.appendChild(callPanel);
+                
+                // 自动播放欢迎语
+                setTimeout(() => {
+                    speak('你好！我是你的AI助手，有什么可以帮你的吗？');
+                }, 1000);
+                
+            } catch (error) {
+                console.error("发起通话失败：", error);
+                alert('通话功能暂时不可用，请重试');
+            }
         }
         
         function showTransferModal() {
@@ -3664,32 +5185,851 @@
         
         function showAIModelSettings() {
             try {
-                alert('AI模型设置开发中');
+                // 获取当前AI配置
+                const aiConfig = JSON.parse(localStorage.getItem('wechatAIConfig') || localStorage.getItem('aiPhoneConfig') || '{}');
+                
+                const html = `
+                    <div style="padding: 20px;">
+                        <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 16px;">AI模型配置</h3>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">名称</label>
+                            <input type="text" id="wechatConfigName" value="${aiConfig.name || '微信API连接'}" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">模型平台</label>
+                            <select id="wechatPlatformSelect" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background-color: white;">
+                                <option value="openai" ${aiConfig.platform === 'openai' ? 'selected' : ''}>OpenAI</option>
+                                <option value="doubao" ${aiConfig.platform === 'doubao' ? 'selected' : ''}>Doubao (豆包/火山云/字节跳动)</option>
+                                <option value="deepseek" ${aiConfig.platform === 'deepseek' ? 'selected' : ''}>DeepSeek (深度求索)</option>
+                                <option value="openrouter" ${aiConfig.platform === 'openrouter' ? 'selected' : ''}>OpenRouter</option>
+                                <option value="custom-openai" ${aiConfig.platform === 'custom-openai' ? 'selected' : ''}>自定义 (OpenAI 协议)</option>
+                            </select>
+                        </div>
+                        <div id="wechatApiUrlItem" style="margin-bottom: 16px; ${aiConfig.platform === 'custom-openai' ? 'display: block;' : 'display: none;'}">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">API 接口地址</label>
+                            <input type="text" id="wechatApiUrlInput" value="${aiConfig.apiUrl || ''}" placeholder="https://api.example.com/v1" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">API 密钥</label>
+                            <input type="password" id="wechatApiKeyInput" value="${aiConfig.apiKey || ''}" placeholder="输入你的 API Key" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 14px; color: #999; margin-bottom: 4px;">模型</label>
+                            <select id="wechatModelSelect" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background-color: white;">
+                                <option value="">请先拉取模型</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                            <button id="wechatFetchModelsBtn" style="flex: 1; padding: 10px; background-color: #ff69b4; border: none; border-radius: 8px; color: white; font-size: 14px;">拉取模型</button>
+                            <button id="wechatTestConnectionBtn" style="flex: 1; padding: 10px; background-color: #333; border: none; border-radius: 8px; color: white; font-size: 14px;">测试链接</button>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="wechatSaveConfigBtn" style="flex: 1; padding: 10px; background-color: #ff69b4; border: none; border-radius: 8px; color: white; font-size: 14px;">保存</button>
+                            <button id="wechatCloseConfigBtn" style="flex: 1; padding: 10px; background-color: #333; border: none; border-radius: 8px; color: white; font-size: 14px;">关闭</button>
+                        </div>
+                    </div>
+                `;
+                
+                // 创建弹窗
+                const modal = document.createElement('div');
+                modal.style.position = 'fixed';
+                modal.style.top = '0';
+                modal.style.left = '0';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                modal.style.display = 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                modal.style.zIndex = '1000';
+                
+                const content = document.createElement('div');
+                content.style.backgroundColor = 'white';
+                content.style.borderRadius = '12px';
+                content.style.width = '90%';
+                content.style.maxWidth = '400px';
+                content.style.maxHeight = '80%';
+                content.style.overflowY = 'auto';
+                content.innerHTML = html;
+                
+                modal.appendChild(content);
+                document.body.appendChild(modal);
+                
+                // 添加事件监听
+                const platformSelect = document.getElementById('wechatPlatformSelect');
+                const apiUrlItem = document.getElementById('wechatApiUrlItem');
+                
+                platformSelect.addEventListener('change', function() {
+                    if (this.value === 'custom-openai') {
+                        apiUrlItem.style.display = 'block';
+                    } else {
+                        apiUrlItem.style.display = 'none';
+                    }
+                });
+                
+                document.getElementById('wechatFetchModelsBtn').addEventListener('click', function() {
+                    fetchWechatModels(modal);
+                });
+                
+                document.getElementById('wechatTestConnectionBtn').addEventListener('click', function() {
+                    testWechatConnection(modal);
+                });
+                
+                document.getElementById('wechatSaveConfigBtn').addEventListener('click', function() {
+                    saveWechatAIConfig(modal);
+                });
+                
+                document.getElementById('wechatCloseConfigBtn').addEventListener('click', function() {
+                    document.body.removeChild(modal);
+                });
+                
+                // 加载模型列表
+                loadWechatModelList(aiConfig);
+                
             } catch (error) {
                 console.error("显示AI模型设置失败：", error);
+                alert('显示设置失败，请重试');
             }
         }
         
         function showAPIConfigSettings() {
+            showAIModelSettings();
+        }
+        
+        // 加载微信模型列表
+        function loadWechatModelList(aiConfig) {
             try {
-                alert('API配置开发中');
+                const modelSelect = document.getElementById('wechatModelSelect');
+                modelSelect.innerHTML = '';
+                
+                const platform = aiConfig.platform || 'openai';
+                let models = [];
+                
+                // 首先检查是否有已拉取的模型
+                if (aiConfig.fetchedModels && aiConfig.fetchedModels.length > 0) {
+                    models = aiConfig.fetchedModels;
+                } else {
+                    // 如果没有已拉取的模型，使用硬编码列表
+                    models = {
+                        openai: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
+                        doubao: ['ep-20240101150000-x1234'],
+                        deepseek: ['deepseek-chat'],
+                        openrouter: ['openai/gpt-3.5-turbo'],
+                        'custom-openai': []
+                    }[platform] || [];
+                }
+                
+                if (models.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = '请先拉取模型';
+                    modelSelect.appendChild(option);
+                } else {
+                    models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        if (model === aiConfig.model) {
+                            option.selected = true;
+                        }
+                        modelSelect.appendChild(option);
+                    });
+                }
             } catch (error) {
-                console.error("显示API配置设置失败：", error);
+                console.error("加载模型列表失败：", error);
+            }
+        }
+        
+        // 拉取微信模型
+        async function fetchWechatModels(modal) {
+            try {
+                const apiUrl = document.getElementById('wechatApiUrlInput').value.trim();
+                const apiKey = document.getElementById('wechatApiKeyInput').value.trim();
+                const platform = document.getElementById('wechatPlatformSelect').value;
+                
+                if (platform !== 'custom-openai' || !apiUrl || !apiKey) {
+                    alert('请选择自定义OpenAI平台并填写API接口地址和密钥');
+                    return;
+                }
+                
+                // 显示加载状态
+                const fetchBtn = document.getElementById('wechatFetchModelsBtn');
+                const originalText = fetchBtn.textContent;
+                fetchBtn.textContent = '拉取中...';
+                fetchBtn.disabled = true;
+                
+                // 调用后端API拉取模型
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        platform: 'custom-openai',
+                        apiKey: apiKey,
+                        apiUrl: apiUrl,
+                        action: 'fetchModels'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const models = data.data || [];
+                
+                if (models.length === 0) {
+                    alert('未获取到任何模型');
+                    return;
+                }
+                
+                // 更新模型列表
+                const modelSelect = document.getElementById('wechatModelSelect');
+                modelSelect.innerHTML = '';
+                
+                const modelIds = [];
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.id;
+                    modelSelect.appendChild(option);
+                    modelIds.push(model.id);
+                });
+                
+                // 保存模型列表到本地存储
+                const aiConfig = JSON.parse(localStorage.getItem('wechatAIConfig') || '{}');
+                aiConfig.fetchedModels = modelIds;
+                localStorage.setItem('wechatAIConfig', JSON.stringify(aiConfig));
+                
+                alert(`成功拉取到 ${models.length} 个模型`);
+                
+            } catch (error) {
+                console.error("拉取模型失败：", error);
+                alert(`拉取模型失败：${error.message}`);
+            } finally {
+                const fetchBtn = document.getElementById('wechatFetchModelsBtn');
+                fetchBtn.textContent = '拉取模型';
+                fetchBtn.disabled = false;
+            }
+        }
+        
+        // 测试微信连接
+        async function testWechatConnection(modal) {
+            try {
+                const apiUrl = document.getElementById('wechatApiUrlInput').value.trim();
+                const apiKey = document.getElementById('wechatApiKeyInput').value.trim();
+                const platform = document.getElementById('wechatPlatformSelect').value;
+                
+                if (platform !== 'custom-openai' || !apiUrl || !apiKey) {
+                    alert('请选择自定义OpenAI平台并填写API接口地址和密钥');
+                    return;
+                }
+                
+                // 显示加载状态
+                const testBtn = document.getElementById('wechatTestConnectionBtn');
+                const originalText = testBtn.textContent;
+                testBtn.textContent = '测试中...';
+                testBtn.disabled = true;
+                
+                // 调用后端API测试连接
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        platform: 'custom-openai',
+                        apiKey: apiKey,
+                        apiUrl: apiUrl,
+                        action: 'testConnection'
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('连接成功！');
+                } else {
+                    const errorData = await response.json().catch(() => ({ error: '连接失败' }));
+                    alert(`连接失败：${errorData.error || '未知错误'}`);
+                }
+                
+            } catch (error) {
+                console.error("测试连接失败：", error);
+                alert(`测试连接失败：${error.message}`);
+            } finally {
+                const testBtn = document.getElementById('wechatTestConnectionBtn');
+                testBtn.textContent = '测试链接';
+                testBtn.disabled = false;
+            }
+        }
+        
+        // 保存微信AI配置
+        function saveWechatAIConfig(modal) {
+            try {
+                // 获取当前配置，包含已拉取的模型列表
+                const existingConfig = JSON.parse(localStorage.getItem('wechatAIConfig') || '{}');
+                const config = {
+                    name: document.getElementById('wechatConfigName').value,
+                    platform: document.getElementById('wechatPlatformSelect').value,
+                    apiUrl: document.getElementById('wechatApiUrlInput').value,
+                    apiKey: document.getElementById('wechatApiKeyInput').value,
+                    model: document.getElementById('wechatModelSelect').value,
+                    fetchedModels: existingConfig.fetchedModels || []
+                };
+                
+                localStorage.setItem('wechatAIConfig', JSON.stringify(config));
+                alert('配置已保存');
+                document.body.removeChild(modal);
+            } catch (error) {
+                console.error("保存配置失败：", error);
+                alert('保存配置失败，请重试');
             }
         }
         
         function showGeneralSettings() {
             try {
-                alert('通用设置开发中');
+                // 创建设置面板
+                const panel = document.createElement('div');
+                panel.style.position = 'fixed';
+                panel.style.top = '0';
+                panel.style.left = '0';
+                panel.style.width = '100%';
+                panel.style.height = '100%';
+                panel.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                panel.style.display = 'flex';
+                panel.style.alignItems = 'center';
+                panel.style.justifyContent = 'center';
+                panel.style.zIndex = '1000';
+                
+                const content = document.createElement('div');
+                content.style.backgroundColor = 'white';
+                content.style.borderRadius = '12px';
+                content.style.width = '90%';
+                content.style.maxWidth = '400px';
+                content.style.maxHeight = '80%';
+                content.style.overflowY = 'auto';
+                content.style.padding = '20px';
+                
+                // 面板头部
+                const header = document.createElement('div');
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.alignItems = 'center';
+                header.style.marginBottom = '20px';
+                
+                const title = document.createElement('h3');
+                title.style.fontSize = '16px';
+                title.style.fontWeight = '500';
+                title.textContent = '通用设置';
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.style.background = 'none';
+                closeBtn.style.border = 'none';
+                closeBtn.style.fontSize = '20px';
+                closeBtn.style.cursor = 'pointer';
+                closeBtn.textContent = '×';
+                closeBtn.onclick = function() {
+                    document.body.removeChild(panel);
+                };
+                
+                header.appendChild(title);
+                header.appendChild(closeBtn);
+                content.appendChild(header);
+                
+                // 消息朗读功能开关
+                const speechSection = document.createElement('div');
+                speechSection.style.marginBottom = '20px';
+                
+                const speechSectionTitle = document.createElement('div');
+                speechSectionTitle.style.fontSize = '14px';
+                speechSectionTitle.style.fontWeight = '500';
+                speechSectionTitle.style.marginBottom = '10px';
+                speechSectionTitle.textContent = '消息朗读设置';
+                
+                speechSection.appendChild(speechSectionTitle);
+                
+                // 获取当前语音设置
+                const voiceConfig = JSON.parse(localStorage.getItem('voiceConfig') || '{}');
+                const speechEnabled = voiceConfig.speechEnabled !== undefined ? voiceConfig.speechEnabled : true;
+                
+                // 消息朗读开关
+                const speechToggle = document.createElement('div');
+                speechToggle.style.display = 'flex';
+                speechToggle.style.alignItems = 'center';
+                speechToggle.style.justifyContent = 'space-between';
+                speechToggle.style.padding = '10px 0';
+                speechToggle.innerHTML = `
+                    <div style="font-size: 14px;">启用消息朗读</div>
+                    <label style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                        <input type="checkbox" id="speechEnabled" ${speechEnabled ? 'checked' : ''} style="opacity: 0; width: 0; height: 0;">
+                        <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${speechEnabled ? '#ff69b4' : '#ccc'}; transition: .4s; border-radius: 24px;"></span>
+                        <span style="position: absolute; cursor: pointer; top: 2px; left: ${speechEnabled ? '28px' : '2px'}; bottom: 2px; width: 20px; background-color: white; transition: .4s; border-radius: 50%;"></span>
+                    </label>
+                `;
+                speechSection.appendChild(speechToggle);
+                
+                // 保存语音设置按钮
+                const saveSpeechBtn = document.createElement('button');
+                saveSpeechBtn.style.width = '100%';
+                saveSpeechBtn.style.padding = '12px';
+                saveSpeechBtn.style.backgroundColor = '#ff69b4';
+                saveSpeechBtn.style.border = 'none';
+                saveSpeechBtn.style.borderRadius = '8px';
+                saveSpeechBtn.style.color = 'white';
+                saveSpeechBtn.style.fontSize = '16px';
+                saveSpeechBtn.style.fontWeight = '500';
+                saveSpeechBtn.style.cursor = 'pointer';
+                saveSpeechBtn.textContent = '保存朗读设置';
+                saveSpeechBtn.onclick = function() {
+                    const enabled = document.getElementById('speechEnabled').checked;
+                    const updatedConfig = {
+                        ...voiceConfig,
+                        speechEnabled: enabled
+                    };
+                    localStorage.setItem('voiceConfig', JSON.stringify(updatedConfig));
+                    alert('朗读设置已保存！');
+                };
+                
+                speechSection.appendChild(saveSpeechBtn);
+                content.appendChild(speechSection);
+                
+                // 图片识别API设置
+                const imageRecognitionSection = document.createElement('div');
+                imageRecognitionSection.style.marginBottom = '20px';
+                
+                const sectionTitle = document.createElement('div');
+                sectionTitle.style.fontSize = '14px';
+                sectionTitle.style.fontWeight = '500';
+                sectionTitle.style.marginBottom = '10px';
+                sectionTitle.textContent = '识图API';
+                
+                imageRecognitionSection.appendChild(sectionTitle);
+                
+                // 获取当前配置
+                const imageRecognitionConfig = JSON.parse(localStorage.getItem('imageRecognitionConfig') || '{}');
+                
+                // API密钥输入
+                const apiKeyInput = document.createElement('div');
+                apiKeyInput.style.marginBottom = '10px';
+                apiKeyInput.innerHTML = `
+                    <label style="display: block; font-size: 12px; color: #999; margin-bottom: 4px;">输入你的 API Key</label>
+                    <input type="password" id="imageApiKey" value="${imageRecognitionConfig.apiKey || ''}" placeholder="输入你的 API Key" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                `;
+                imageRecognitionSection.appendChild(apiKeyInput);
+                
+                // API地址输入
+                const apiUrlInput = document.createElement('div');
+                apiUrlInput.style.marginBottom = '10px';
+                apiUrlInput.innerHTML = `
+                    <label style="display: block; font-size: 12px; color: #999; margin-bottom: 4px;">API 接口地址</label>
+                    <input type="text" id="imageApiUrl" value="${imageRecognitionConfig.apiUrl || 'https://api.openai.com/v1/chat/completions'}" placeholder="https://api.openai.com/v1/chat/completions" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                `;
+                imageRecognitionSection.appendChild(apiUrlInput);
+                
+                // 模型选择
+                const modelSelect = document.createElement('div');
+                modelSelect.style.marginBottom = '10px';
+                modelSelect.innerHTML = `
+                    <label style="display: block; font-size: 12px; color: #999; margin-bottom: 4px;">模型</label>
+                    <select id="imageModelSelect" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background-color: white;">
+                        <option value="gpt-4-vision-preview" ${imageRecognitionConfig.model === 'gpt-4-vision-preview' ? 'selected' : ''}>gpt-4-vision-preview</option>
+                        <option value="gpt-4-turbo" ${imageRecognitionConfig.model === 'gpt-4-turbo' ? 'selected' : ''}>gpt-4-turbo</option>
+                    </select>
+                `;
+                imageRecognitionSection.appendChild(modelSelect);
+                
+                // 保存按钮
+                const saveBtn = document.createElement('button');
+                saveBtn.style.width = '100%';
+                saveBtn.style.padding = '12px';
+                saveBtn.style.backgroundColor = '#ff69b4';
+                saveBtn.style.border = 'none';
+                saveBtn.style.borderRadius = '8px';
+                saveBtn.style.color = 'white';
+                saveBtn.style.fontSize = '16px';
+                saveBtn.style.fontWeight = '500';
+                saveBtn.style.cursor = 'pointer';
+                saveBtn.textContent = '保存设置';
+                saveBtn.onclick = function() {
+                    const config = {
+                        apiKey: document.getElementById('imageApiKey').value,
+                        apiUrl: document.getElementById('imageApiUrl').value,
+                        model: document.getElementById('imageModelSelect').value
+                    };
+                    localStorage.setItem('imageRecognitionConfig', JSON.stringify(config));
+                    alert('设置已保存！');
+                };
+                
+                imageRecognitionSection.appendChild(saveBtn);
+                content.appendChild(imageRecognitionSection);
+                
+                // 语音设置
+                const voiceSection = document.createElement('div');
+                voiceSection.style.marginBottom = '20px';
+                
+                const voiceSectionTitle = document.createElement('div');
+                voiceSectionTitle.style.fontSize = '14px';
+                voiceSectionTitle.style.fontWeight = '500';
+                voiceSectionTitle.style.marginBottom = '10px';
+                voiceSectionTitle.textContent = '语音识别设置';
+                
+                voiceSection.appendChild(voiceSectionTitle);
+                
+                // 语音识别API选择
+                const speechRecognitionApiSelect = document.createElement('div');
+                speechRecognitionApiSelect.style.marginBottom = '10px';
+                speechRecognitionApiSelect.innerHTML = `
+                    <label style="display: block; font-size: 12px; color: #999; margin-bottom: 4px;">语音识别API</label>
+                    <select id="speechRecognitionApi" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background-color: white;">
+                        <option value="web-speech-api" ${voiceConfig.speechRecognitionApi === 'web-speech-api' ? 'selected' : ''}>Web Speech API</option>
+                        <option value="custom" ${voiceConfig.speechRecognitionApi === 'custom' ? 'selected' : ''}>自定义API</option>
+                    </select>
+                `;
+                voiceSection.appendChild(speechRecognitionApiSelect);
+                
+                // 语音合成API选择
+                const speechSynthesisApiSelect = document.createElement('div');
+                speechSynthesisApiSelect.style.marginBottom = '10px';
+                speechSynthesisApiSelect.innerHTML = `
+                    <label style="display: block; font-size: 12px; color: #999; margin-bottom: 4px;">语音合成API</label>
+                    <select id="speechSynthesisApi" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background-color: white;">
+                        <option value="web-speech-api" ${voiceConfig.speechSynthesisApi === 'web-speech-api' ? 'selected' : ''}>Web Speech API</option>
+                        <option value="custom" ${voiceConfig.speechSynthesisApi === 'custom' ? 'selected' : ''}>自定义API</option>
+                    </select>
+                `;
+                voiceSection.appendChild(speechSynthesisApiSelect);
+                
+                // 语音识别语言选择
+                const languageSelect = document.createElement('div');
+                languageSelect.style.marginBottom = '10px';
+                languageSelect.innerHTML = `
+                    <label style="display: block; font-size: 12px; color: #999; margin-bottom: 4px;">设置识别语言</label>
+                    <select id="recognitionLanguage" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background-color: white;">
+                        <option value="zh-CN" ${voiceConfig.recognitionLanguage === 'zh-CN' ? 'selected' : ''}>中文 (zh-CN)</option>
+                        <option value="en-US" ${voiceConfig.recognitionLanguage === 'en-US' ? 'selected' : ''}>英文 (en-US)</option>
+                    </select>
+                `;
+                voiceSection.appendChild(languageSelect);
+                
+                // 保存语音设置按钮
+                const saveVoiceBtn = document.createElement('button');
+                saveVoiceBtn.style.width = '100%';
+                saveVoiceBtn.style.padding = '12px';
+                saveVoiceBtn.style.backgroundColor = '#ff69b4';
+                saveVoiceBtn.style.border = 'none';
+                saveVoiceBtn.style.borderRadius = '8px';
+                saveVoiceBtn.style.color = 'white';
+                saveVoiceBtn.style.fontSize = '16px';
+                saveVoiceBtn.style.fontWeight = '500';
+                saveVoiceBtn.style.cursor = 'pointer';
+                saveVoiceBtn.textContent = '保存语音设置';
+                saveVoiceBtn.onclick = function() {
+                    const config = {
+                        ...voiceConfig,
+                        speechRecognitionApi: document.getElementById('speechRecognitionApi').value,
+                        speechSynthesisApi: document.getElementById('speechSynthesisApi').value,
+                        recognitionLanguage: document.getElementById('recognitionLanguage').value
+                    };
+                    localStorage.setItem('voiceConfig', JSON.stringify(config));
+                    alert('语音设置已保存！');
+                };
+                
+                voiceSection.appendChild(saveVoiceBtn);
+                content.appendChild(voiceSection);
+                
+                // 用户账号系统设置
+                const accountSection = document.createElement('div');
+                accountSection.style.marginBottom = '20px';
+                
+                const accountSectionTitle = document.createElement('div');
+                accountSectionTitle.style.fontSize = '14px';
+                accountSectionTitle.style.fontWeight = '500';
+                accountSectionTitle.style.marginBottom = '10px';
+                accountSectionTitle.textContent = '账号设置';
+                
+                accountSection.appendChild(accountSectionTitle);
+                
+                // 获取当前账号配置
+                const accountConfig = JSON.parse(localStorage.getItem('accountConfig') || '{}');
+                
+                // 账号信息
+                const accountInfo = document.createElement('div');
+                accountInfo.style.marginBottom = '10px';
+                accountInfo.innerHTML = `
+                    <div style="font-size: 14px; margin-bottom: 5px;">账号状态: ${accountConfig.loggedIn ? '已登录' : '未登录'}</div>
+                    <div style="font-size: 12px; color: #999; margin-bottom: 10px;">登录后可实现数据持久化存储</div>
+                `;
+                accountSection.appendChild(accountInfo);
+                
+                // 登录/注册按钮
+                const accountBtn = document.createElement('button');
+                accountBtn.style.width = '100%';
+                accountBtn.style.padding = '12px';
+                accountBtn.style.backgroundColor = '#ff69b4';
+                accountBtn.style.border = 'none';
+                accountBtn.style.borderRadius = '8px';
+                accountBtn.style.color = 'white';
+                accountBtn.style.fontSize = '16px';
+                accountBtn.style.fontWeight = '500';
+                accountBtn.style.cursor = 'pointer';
+                accountBtn.textContent = accountConfig.loggedIn ? '退出登录' : '登录/注册';
+                accountBtn.onclick = function() {
+                    if (accountConfig.loggedIn) {
+                        if (confirm('确定要退出登录吗？')) {
+                            localStorage.setItem('accountConfig', JSON.stringify({ loggedIn: false }));
+                            alert('退出登录成功');
+                            document.body.removeChild(panel);
+                            showGeneralSettings();
+                            // 退出登录后重新加载数据
+                            reloadWechatData();
+                        }
+                    } else {
+                        // 显示登录/注册表单
+                        showLoginRegisterForm(panel);
+                    }
+                };
+                
+                // 登录/注册表单
+                function showLoginRegisterForm(panel) {
+                    const formPanel = document.createElement('div');
+                    formPanel.style.position = 'fixed';
+                    formPanel.style.top = '0';
+                    formPanel.style.left = '0';
+                    formPanel.style.width = '100%';
+                    formPanel.style.height = '100%';
+                    formPanel.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                    formPanel.style.display = 'flex';
+                    formPanel.style.alignItems = 'center';
+                    formPanel.style.justifyContent = 'center';
+                    formPanel.style.zIndex = '1002';
+                    
+                    const formContent = document.createElement('div');
+                    formContent.style.backgroundColor = 'white';
+                    formContent.style.borderRadius = '12px';
+                    formContent.style.width = '90%';
+                    formContent.style.maxWidth = '400px';
+                    formContent.style.padding = '20px';
+                    
+                    let isRegister = false;
+                    
+                    function renderForm() {
+                        formContent.innerHTML = `
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <h3 style="font-size: 18px; font-weight: 500; margin-bottom: 10px;">${isRegister ? '注册账号' : '登录账号'}</h3>
+                                <div style="font-size: 12px; color: #999; margin-bottom: 20px;">
+                                    ${isRegister ? '请填写以下信息注册账号' : '请输入账号信息登录'}
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-size: 12px; color: #999; margin-bottom: 4px;">用户名</label>
+                                <input type="text" id="loginUsername" placeholder="请输入用户名" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">支持中英文、数字，长度3-20位</div>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-size: 12px; color: #999; margin-bottom: 4px;">密码</label>
+                                <input type="password" id="loginPassword" placeholder="请输入密码" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">长度8-20位，需包含大小写字母、数字和特殊符号</div>
+                            </div>
+                            ${isRegister ? `
+                                <div style="margin-bottom: 20px;">
+                                    <label style="display: block; font-size: 12px; color: #999; margin-bottom: 4px;">确认密码</label>
+                                    <input type="password" id="loginConfirmPassword" placeholder="请再次输入密码" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                                </div>
+                            ` : ''}
+                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                <button id="submitBtn" style="flex: 1; padding: 12px; background-color: #ff69b4; border: none; border-radius: 8px; color: white; font-size: 14px; cursor: pointer;">
+                                    ${isRegister ? '注册' : '登录'}
+                                </button>
+                                <button id="cancelBtn" style="flex: 1; padding: 12px; background-color: #f0f0f0; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">取消</button>
+                            </div>
+                            <div style="text-align: center;">
+                                <button id="toggleBtn" style="background: none; border: none; font-size: 12px; color: #ff69b4; cursor: pointer;">
+                                    ${isRegister ? '已有账号？点击登录' : '没有账号？点击注册'}
+                                </button>
+                            </div>
+                        `;
+                    }
+                    
+                    renderForm();
+                    
+                    formPanel.appendChild(formContent);
+                    document.body.appendChild(formPanel);
+                    
+                    // 切换登录/注册
+                    document.getElementById('toggleBtn').onclick = function() {
+                        isRegister = !isRegister;
+                        renderForm();
+                        bindEvents();
+                    };
+                    
+                    // 取消按钮
+                    document.getElementById('cancelBtn').onclick = function() {
+                        document.body.removeChild(formPanel);
+                    };
+                    
+                    // 提交按钮
+                    function bindEvents() {
+                        document.getElementById('submitBtn').onclick = function() {
+                            const username = document.getElementById('loginUsername').value.trim();
+                            const password = document.getElementById('loginPassword').value;
+                            
+                            if (!validateUsername(username)) {
+                                alert('用户名不符合要求，支持中英文、数字，长度3-20位');
+                                return;
+                            }
+                            
+                            const passwordValidation = validatePassword(password);
+                            if (!passwordValidation.valid) {
+                                alert(passwordValidation.message);
+                                return;
+                            }
+                            
+                            if (isRegister) {
+                                const confirmPassword = document.getElementById('loginConfirmPassword').value;
+                                if (password !== confirmPassword) {
+                                    alert('两次输入的密码不一致，请重新输入');
+                                    return;
+                                }
+                                
+                                // 注册逻辑
+                                registerUser(username, password);
+                            } else {
+                                // 登录逻辑
+                                loginUser(username, password);
+                            }
+                        };
+                    }
+                    
+                    bindEvents();
+                    
+                    // 验证用户名
+                    function validateUsername(username) {
+                        // 用户名长度3-20位，支持中英文、数字
+                        const usernameRegex = /^[a-zA-Z0-9\u4e00-\u9fa5]{3,20}$/;
+                        return usernameRegex.test(username);
+                    }
+                    
+                    // 验证密码
+                    function validatePassword(password) {
+                        // 密码长度8-20位，包含大小写字母、数字和特殊符号
+                        if (password.length < 8 || password.length > 20) {
+                            return { valid: false, message: '密码长度必须在8-20位之间' };
+                        }
+                        
+                        const hasUpper = /[A-Z]/.test(password);
+                        const hasLower = /[a-z]/.test(password);
+                        const hasNumber = /[0-9]/.test(password);
+                        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+                        
+                        if (!hasUpper) {
+                            return { valid: false, message: '密码必须包含大写字母' };
+                        }
+                        if (!hasLower) {
+                            return { valid: false, message: '密码必须包含小写字母' };
+                        }
+                        if (!hasNumber) {
+                            return { valid: false, message: '密码必须包含数字' };
+                        }
+                        if (!hasSpecial) {
+                            return { valid: false, message: '密码必须包含特殊符号' };
+                        }
+                        
+                        return { valid: true };
+                    }
+                    
+                    // 注册用户
+                    function registerUser(username, password) {
+                        // 检查用户名是否已存在
+                        const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '{}');
+                        if (existingUsers[username]) {
+                            alert('用户名已存在，请选择其他用户名');
+                            return;
+                        }
+                        
+                        // 保存用户信息
+                        existingUsers[username] = password;
+                        localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
+                        
+                        // 自动登录
+                        localStorage.setItem('accountConfig', JSON.stringify({ loggedIn: true, username: username }));
+                        alert('注册成功！已自动登录');
+                        document.body.removeChild(formPanel);
+                        document.body.removeChild(panel);
+                        // 登录后重新加载数据
+                        reloadWechatData();
+                        // 重新显示设置面板以更新登录状态
+                        showGeneralSettings();
+                    }
+                    
+                    // 登录用户
+                    function loginUser(username, password) {
+                        // 验证用户信息
+                        const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '{}');
+                        if (!existingUsers[username] || existingUsers[username] !== password) {
+                            alert('用户名或密码错误，请重新输入');
+                            return;
+                        }
+                        
+                        // 保存登录状态
+                        localStorage.setItem('accountConfig', JSON.stringify({ loggedIn: true, username: username }));
+                        alert('登录成功！');
+                        document.body.removeChild(formPanel);
+                        document.body.removeChild(panel);
+                        // 登录后重新加载数据
+                        reloadWechatData();
+                        // 重新显示设置面板以更新登录状态
+                        showGeneralSettings();
+                    }
+                }
+                
+
+                
+                accountSection.appendChild(accountBtn);
+                content.appendChild(accountSection);
+                
+                panel.appendChild(content);
+                document.body.appendChild(panel);
+                
+                // 添加开关事件监听
+                const speechEnabledCheckbox = document.getElementById('speechEnabled');
+                if (speechEnabledCheckbox) {
+                    speechEnabledCheckbox.addEventListener('change', function() {
+                        const slider = this.nextElementSibling;
+                        const knob = slider.nextElementSibling;
+                        if (this.checked) {
+                            slider.style.backgroundColor = '#ff69b4';
+                            knob.style.left = '28px';
+                        } else {
+                            slider.style.backgroundColor = '#ccc';
+                            knob.style.left = '2px';
+                        }
+                    });
+                }
+                
             } catch (error) {
                 console.error("显示通用设置失败：", error);
+                alert('设置功能加载失败，请重试');
             }
         }
         
         function logout() {
             if (confirm('确定要退出登录吗？')) {
+                // 清除登录状态
+                localStorage.setItem('accountConfig', JSON.stringify({ loggedIn: false }));
                 alert('退出登录成功');
+                // 退出登录后重新加载数据
+                reloadWechatData();
             }
+        }
+        
+        // 重新加载微信数据
+        function reloadWechatData() {
+            loadWechatRoles();
+            loadWechatSettings();
+            loadMoments();
+            renderMessageList();
+            renderMomentsList();
+            renderProfilePage();
         }
         
         // ==================== 页面初始化 ====================
