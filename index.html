@@ -3025,18 +3025,24 @@
         // 调用后端API获取AI回复
         async function getAIResponse(message, additionalUserMessages = null) {
             try {
+                console.log('开始获取AI回复...');
+                
                 // 获取微信独立配置，优先使用微信配置，其次使用酒馆配置
                 let aiConfig = {};
                 if (localStorage.getItem('wechatAIConfig')) {
                     aiConfig = JSON.parse(localStorage.getItem('wechatAIConfig'));
+                    console.log('使用微信配置');
                 } else if (localStorage.getItem('aiPhoneConfig')) {
                     aiConfig = JSON.parse(localStorage.getItem('aiPhoneConfig'));
+                    console.log('使用酒馆配置');
                 }
                 
                 const platform = aiConfig.platform || 'openai';
                 const apiKey = aiConfig.apiKey || '';
                 const model = aiConfig.model || 'gpt-3.5-turbo';
                 const apiUrl = aiConfig.apiUrl || '';
+                
+                console.log('配置信息:', { platform, model, hasApiKey: !!apiKey, apiUrl });
                 
                 // 检查API密钥是否存在
                 if (!apiKey) {
@@ -3089,26 +3095,60 @@
                     apiUrl: apiUrl
                 };
                 
-                // 发送请求
-                const response = await fetch(API_BASE_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestBody)
-                });
+                console.log('发送请求到:', API_BASE_URL);
                 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('API响应错误:', response.status, errorText);
-                    throw new Error(`API请求失败 (${response.status})，请检查配置`);
+                // 添加超时控制和兼容性处理
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+                
+                try {
+                    // 发送请求
+                    const response = await fetch(API_BASE_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody),
+                        signal: controller.signal,
+                        mode: 'cors',
+                        cache: 'no-cache'
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    console.log('响应状态:', response.status);
+                    
+                    if (!response.ok) {
+                        let errorText = '未知错误';
+                        try {
+                            errorText = await response.text();
+                        } catch (e) {
+                            errorText = `HTTP ${response.status}`;
+                        }
+                        console.error('API响应错误:', response.status, errorText);
+                        throw new Error(`API请求失败 (${response.status})，请检查网络或配置`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('API响应数据:', data);
+                    
+                    if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+                        console.error('API返回数据格式错误:', data);
+                        throw new Error('API返回数据格式错误');
+                    }
+                    
+                    console.log('成功获取回复');
+                    return data.choices[0].message.content;
+                    
+                } catch (fetchError) {
+                    clearTimeout(timeoutId);
+                    if (fetchError.name === 'AbortError') {
+                        throw new Error('请求超时，请检查网络连接后重试');
+                    }
+                    throw fetchError;
                 }
                 
-                const data = await response.json();
-                if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
-                    throw new Error('API返回数据格式错误');
-                }
-                return data.choices[0].message.content;
             } catch (error) {
                 console.error("获取AI回复API调用失败：", error);
                 // 不使用模拟回复，直接抛出错误让调用者处理
@@ -3996,7 +4036,7 @@
                     } catch (error) {
                         console.error("获取AI回复失败：", error);
                         hideLoadingState();
-                        const errorMessage = '抱歉，获取回复失败，请重试';
+                        const errorMessage = `抱歉，获取回复失败：${error.message || '请重试'}`;
                         addChatMessage(errorMessage, false);
                         speak(errorMessage);
                     }
@@ -4037,7 +4077,7 @@
             } catch (error) {
                 console.error("手动触发回复失败：", error);
                 hideLoadingState();
-                const errorMessage = '抱歉，获取回复失败，请重试';
+                const errorMessage = `抱歉，获取回复失败：${error.message || '请重试'}`;
                 addChatMessage(errorMessage, false);
                 speak(errorMessage);
                 isWaitingForReply = false;
